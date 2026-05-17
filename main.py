@@ -1,25 +1,3 @@
-"""
-АвтоДиагност — FastAPI Backend (Groq версия)
-"""
-import os
-import json
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional, List
-from groq import Groq
-
-app = FastAPI(title="АвтоДиагност API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-client = Groq(api_key=os.environ["GROQ_API_KEY"])
-
 SYSTEM_PROMPT = """Ты — АвтоДиагност, AI-агент по диагностике автомобилей. Говоришь по-русски.
 
 ВАЖНО: Отвечай ТОЛЬКО валидным JSON объектом. Никакого текста до или после JSON. Без markdown, без ```json.
@@ -90,7 +68,7 @@ def safe_parse(text: str) -> dict:
 
 def call_groq(messages: list) -> dict:
     response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model="llama-3.3-70b-versatile",
         messages=messages,
         temperature=0.7,
         max_tokens=1500,
