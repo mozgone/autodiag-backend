@@ -1,5 +1,5 @@
 """
-АвтоДиагност — FastAPI Backend (Gemini версия)
+АвтоДиагност — FastAPI Backend (Groq версия)
 """
 import os
 import json
@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
-import google.generativeai as genai
+from groq import Groq
 
 app = FastAPI(title="АвтоДиагност API")
 
@@ -18,8 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = Groq(api_key=os.environ["GROQ_API_KEY"])
 
 SYSTEM_PROMPT = """Ты — АвтоДиагност, AI-агент по диагностике автомобилей. Говоришь по-русски.
 
@@ -80,15 +79,6 @@ class SessionRequest(BaseModel):
     user_id: Optional[str] = "anon"
 
 
-def build_prompt(history: List[Message], new_message: str) -> str:
-    parts = [SYSTEM_PROMPT, "\n\n--- ДИАЛОГ ---\n"]
-    for msg in history:
-        role = "Пользователь" if msg.role == "user" else "АвтоДиагност"
-        parts.append(f"{role}: {msg.content}\n")
-    parts.append(f"Пользователь: {new_message}\nАвтоДиагност (ответь JSON):")
-    return "".join(parts)
-
-
 def safe_parse(text: str) -> dict:
     text = text.strip().replace("```json", "").replace("```", "").strip()
     start = text.find("{")
@@ -98,13 +88,26 @@ def safe_parse(text: str) -> dict:
     return json.loads(text)
 
 
+def call_groq(messages: list) -> dict:
+    response = client.chat.completions.create(
+        model="llama3-70b-8192",
+        messages=messages,
+        temperature=0.7,
+        max_tokens=1500,
+    )
+    return safe_parse(response.choices[0].message.content)
+
+
 @app.post("/session/start")
 async def start_session(req: SessionRequest):
     try:
-        prompt = SYSTEM_PROMPT + "\n\nПользователь только что открыл приложение. Поприветствуй и попроси описать проблему. Ответь JSON."
-        response = model.generate_content(prompt)
-        return safe_parse(response.text)
-    except Exception:
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": "Пользователь только что открыл приложение. Поприветствуй и попроси описать проблему с автомобилем."}
+        ]
+        return call_groq(messages)
+    except Exception as e:
+        print(f"Error: {e}")
         return {
             "message": "👋 Привет! Я АвтоДиагност.\n\nОпишите что случилось с вашим автомобилем — можно простыми словами: «стучит», «не заводится», «горит лампочка». Разберёмся вместе!",
             "quick_replies": ["Стук / вибрация", "Не заводится", "Горит лампочка", "Другая проблема"],
@@ -116,10 +119,13 @@ async def start_session(req: SessionRequest):
 @app.post("/chat")
 async def chat(req: ChatRequest):
     try:
-        prompt = build_prompt(req.history[:-1] if req.history else [], req.message)
-        response = model.generate_content(prompt)
-        return safe_parse(response.text)
-    except Exception:
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        for h in req.history[:-1]:
+            messages.append({"role": h.role, "content": h.content})
+        messages.append({"role": "user", "content": req.message})
+        return call_groq(messages)
+    except Exception as e:
+        print(f"Error: {e}")
         return {
             "message": "Что-то пошло не так. Попробуйте написать ещё раз 🙏",
             "quick_replies": [],
