@@ -30,6 +30,13 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
 
     async with AsyncSessionLocal() as db:
+        # Проверяем, не загружены ли уже демо-данные
+        from sqlalchemy import select
+        existing = await db.execute(select(Tenant).where(Tenant.slug == "demo"))
+        if existing.scalar_one_or_none():
+            print("⚠️  Демо-данные уже загружены, пропускаем.")
+            return
+
         # Тенант
         tenant = Tenant(
             id=uuid.UUID("00000000-0000-0000-0000-000000000001"),

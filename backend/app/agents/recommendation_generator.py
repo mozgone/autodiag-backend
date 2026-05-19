@@ -80,7 +80,15 @@ class RecommendationGenerator(BaseAgent):
     async def _generate_with_ai(self, manager_name: str, stats: Dict, avg: Dict) -> List[Dict]:
         try:
             from openai import AsyncOpenAI
-            client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            # OpenRouter совместим с OpenAI API — просто меняем base_url
+            client = AsyncOpenAI(
+                api_key=settings.OPENAI_API_KEY,
+                base_url=settings.OPENAI_BASE_URL,
+                default_headers={
+                    "HTTP-Referer": "https://sellex.app",
+                    "X-Title": "Sellex",
+                },
+            )
             prompt = f"""Ты — ИИ-аналитик продаж. Дай 3-5 рекомендаций для менеджера {manager_name}.
 
 Метрики менеджера: {json.dumps(stats, ensure_ascii=False)}
