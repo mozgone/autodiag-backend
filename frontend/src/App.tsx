@@ -3,11 +3,13 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Managers from './pages/Managers';
 import ManagerDetail from './pages/ManagerDetail';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import TelegramApp from './pages/TelegramApp';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuth = useAuthStore((s) => s.isAuthenticated());
@@ -17,7 +19,14 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
+      {/* Публичные маршруты */}
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      {/* Telegram Mini App — особый маршрут, своя авторизация */}
+      <Route path="/tg" element={<TelegramApp />} />
+
+      {/* Защищённые маршруты веб-приложения */}
       <Route
         path="/"
         element={

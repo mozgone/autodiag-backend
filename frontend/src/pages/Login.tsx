@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { login } from '../api/client';
@@ -84,6 +84,13 @@ export default function Login() {
           Email: admin@sellex.demo<br />
           Пароль: demo1234
         </div>
+
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#64748b' }}>
+          Нет аккаунта?{' '}
+          <Link to="/register" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>
+            Зарегистрировать компанию
+          </Link>
+        </p>
       </div>
     </div>
   );

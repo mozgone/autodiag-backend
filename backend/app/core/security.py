@@ -23,3 +23,24 @@ def decode_token(token: str) -> Optional[dict]:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return None
+
+import hmac as _hmac
+import hashlib as _hashlib
+import json as _json
+from urllib.parse import parse_qsl as _parse_qsl
+
+def verify_telegram_init_data(init_data: str, bot_token: str) -> Optional[dict]:
+    """
+    Проверяет подпись initData от Telegram Mini App (HMAC-SHA256).
+    Возвращает dict с данными пользователя или None если подпись невалидна.
+    """
+    parsed = dict(_parse_qsl(init_data, keep_blank_values=True))
+    hash_value = parsed.pop("hash", None)
+    if not hash_value:
+        return None
+    data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()))
+    secret_key = _hmac.new(b"WebAppData", bot_token.encode(), _hashlib.sha256).digest()
+    computed = _hmac.new(secret_key, data_check_string.encode(), _hashlib.sha256).hexdigest()
+    if not _hmac.compare_digest(computed, hash_value):
+        return None
+    return _json.loads(parsed.get("user", "{}"))

@@ -28,7 +28,21 @@ export default api;
 export const login = (email: string, password: string) =>
   api.post('/auth/login', { email, password }).then((r) => r.data);
 
+export const register = (data: {
+  company_name: string; full_name: string; email: string; password: string;
+}) => api.post('/auth/register', data).then((r) => r.data);
+
 export const getMe = () => api.get('/auth/me').then((r) => r.data);
+
+// Telegram
+export const telegramAuth = (data: { init_data: string }) =>
+  api.post('/auth/telegram', data).then((r) => r.data);
+
+export const telegramLoginAndLink = (data: { init_data: string; email: string; password: string }) =>
+  api.post('/auth/telegram/link', data).then((r) => r.data);
+
+export const telegramUnlink = () =>
+  api.delete('/auth/telegram/link');
 
 // Managers
 export const getManagers = () => api.get('/managers/').then((r) => r.data);

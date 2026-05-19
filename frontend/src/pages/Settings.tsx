@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCRMStatus, connectCRM } from '../api/client';
+import { getCRMStatus, connectCRM, getMe, telegramUnlink } from '../api/client';
 import { useAuthStore } from '../store/auth';
 import toast from 'react-hot-toast';
-import { CheckCircle, Plug } from 'lucide-react';
+import { CheckCircle, Plug, Send, LinkIcon, Unlink } from 'lucide-react';
 
 export default function Settings() {
   const user = useAuthStore((s) => s.user);
   const { data: crmStatus } = useQuery({ queryKey: ['crm-status'], queryFn: getCRMStatus });
+  const { data: userProfile } = useQuery({ queryKey: ['me'], queryFn: getMe });
   const [crmType, setCrmType] = useState('mock');
   const [subdomain, setSubdomain] = useState('');
   const [token, setToken] = useState('');
   const [consent, setConsent] = useState(false);
   const queryClient = useQueryClient();
+
+  const unlinkTgMutation = useMutation({
+    mutationFn: telegramUnlink,
+    onSuccess: () => {
+      toast.success('Telegram отвязан');
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
+    onError: () => toast.error('Ошибка отвязки'),
+  });
+
+  const isTgLinked = !!userProfile?.telegram_id;
 
   const connectMutation = useMutation({
     mutationFn: () => connectCRM({ crm_type: crmType, subdomain, access_token: token }),
@@ -112,6 +124,63 @@ export default function Settings() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Telegram Mini App */}
+      <div style={{ ...card, marginTop: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Telegram Mini App</h2>
+          {isTgLinked ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#10b981', fontWeight: 600 }}>
+              <CheckCircle size={14} /> Привязан
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>Не привязан</div>
+          )}
+        </div>
+
+        {isTgLinked ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ padding: '12px 14px', background: '#ecfdf5', borderRadius: 10, fontSize: 13, color: '#065f46' }}>
+              ✅ Ваш Telegram-аккаунт привязан. Открывайте Sellex прямо из бота — авторизация автоматическая.
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <a
+                href="https://t.me/sellex_bot/app"
+                target="_blank" rel="noreferrer"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+              >
+                <Send size={15} /> Открыть в Telegram
+              </a>
+              <button
+                onClick={() => unlinkTgMutation.mutate()}
+                disabled={unlinkTgMutation.isPending}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '11px 14px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+              >
+                <Unlink size={15} /> Отвязать
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: 10, fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
+              <strong>Как привязать аккаунт:</strong>
+              <ol style={{ margin: '8px 0 0 16px', padding: 0 }}>
+                <li>Откройте бота Sellex в Telegram</li>
+                <li>Нажмите кнопку «Открыть приложение»</li>
+                <li>Введите ваш email и пароль от Sellex</li>
+                <li>Аккаунты будут связаны автоматически</li>
+              </ol>
+            </div>
+            <a
+              href="https://t.me/sellex_bot"
+              target="_blank" rel="noreferrer"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+            >
+              <Send size={16} /> Перейти к боту Sellex
+            </a>
+          </div>
+        )}
       </div>
 
       <div style={{ marginTop: 20, padding: '12px 16px', background: '#fef2f2', borderRadius: 10, fontSize: 12, color: '#991b1b', border: '1px solid #fecaca' }}>
