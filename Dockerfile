@@ -1,17 +1,8 @@
 # =====================================================
-# Sellex — Production Dockerfile для Railway
-# Собирает React-фронтенд, запускает FastAPI-бэкенд
+# Sellex — Production Dockerfile
+# Фронтенд уже собран в frontend/build/
 # =====================================================
 
-# Stage 1: Собираем React
-FROM node:20-alpine AS frontend
-WORKDIR /frontend
-COPY frontend/package*.json ./
-RUN npm ci --legacy-peer-deps
-COPY frontend/ .
-RUN npm run build
-
-# Stage 2: Python-бэкенд
 FROM python:3.11-slim
 WORKDIR /app
 
@@ -22,8 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
 
-# Копируем собранный фронтенд → бэкенд отдаёт его как статику
-COPY --from=frontend /frontend/build ./static/frontend
+# Копируем pre-built фронтенд → бэкенд отдаёт его как статику
+COPY frontend/build/ ./static/frontend/
 
 COPY start.sh .
 RUN chmod +x start.sh
