@@ -1,0 +1,85 @@
+version: "3.9"
+
+services:
+  # База данных PostgreSQL
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sellex
+      POSTGRES_PASSWORD: sellex123
+      POSTGRES_DB: sellex
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sellex"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis — кэш и очереди задач
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sellex:sellex123@db:5432/sellex
+      DATABASE_URL_SYNC: postgresql://sellex:sellex123@db:5432/sellex
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-sellex-change-this-in-production}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  # Telegram Bot (запускается только если задан токен)
+  telegram_bot:
+    build:
+      context: ./telegram_bot
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      SELLEX_API_URL: http://backend:8000/api/v1
+      SELLEX_API_TOKEN: ${SELLEX_API_TOKEN:-}
+    depends_on:
+      - backend
+    profiles:
+      - telegram  # Запускается только с: docker compose --profile telegram up
+
+volumes:
+  postgres_data:
