@@ -1,20 +1,12 @@
 """
 Скрипт настройки Telegram-бота Sellex.
-Запустить ОДИН РАЗ после деплоя на Railway.
-
-Требования: pip install requests
-Запуск:     python setup_bot.py
+Запустить ОДИН РАЗ после деплоя.
+Использует только стандартную библиотеку Python — ничего устанавливать не нужно.
 """
 import json
 import sys
-
-try:
-    import requests
-except ImportError:
-    print("Установите requests: pip install requests")
-    sys.exit(1)
-
-# ─── Настройки ────────────────────────────────────────────────────────────────
+import urllib.request
+import urllib.error
 
 BOT_TOKEN = "8940848872:AAECYeZwptVkZ1MelxWg__aspQ7GFYp16yE"
 
@@ -24,8 +16,8 @@ print("=" * 55)
 print()
 
 APP_URL = input(
-    "Введите URL вашего приложения на Railway\n"
-    "(пример: https://sellex-production.up.railway.app): "
+    "Введите URL вашего приложения\n"
+    "(пример: https://sellex-app.onrender.com): "
 ).strip().rstrip("/")
 
 if not APP_URL.startswith("https://"):
@@ -37,8 +29,21 @@ API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 
 def tg(method: str, **data) -> dict:
-    r = requests.post(f"{API}/{method}", json=data, timeout=10)
-    return r.json()
+    url = f"{API}/{method}"
+    body = json.dumps(data).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        return json.loads(e.read())
+    except Exception as e:
+        print(f"Ошибка сети: {e}")
+        sys.exit(1)
 
 
 # 1. Получаем информацию о боте
@@ -85,15 +90,11 @@ print("=" * 55)
 print("  ✅ Настройка завершена!")
 print("=" * 55)
 print()
-print("Добавьте эти переменные в Railway → Variables:")
+print("Добавьте в Render → sellex-app → Environment:")
 print()
-print(f"  TELEGRAM_BOT_TOKEN   = {BOT_TOKEN}")
-print(f"  TELEGRAM_BOT_USERNAME= {username}")
-print(f"  APP_URL              = {APP_URL}")
-print(f"  MINI_APP_URL         = {MINI_APP_URL}")
+print(f"  TELEGRAM_BOT_USERNAME = {username}")
+print(f"  APP_URL               = {APP_URL}")
+print(f"  MINI_APP_URL          = {MINI_APP_URL}")
 print()
 print(f"Ссылка на бота:     https://t.me/{username}")
 print(f"Ссылка на Mini App: {MINI_APP_URL}")
-print()
-print("Попробуйте бота: откройте Telegram, найдите")
-print(f"@{username} и нажмите /start")
