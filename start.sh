@@ -6,21 +6,22 @@ echo "============================================"
 echo "  Sellex — запуск приложения"
 echo "============================================"
 
-# Инициализируем таблицы в PostgreSQL
-echo "📦 Создание таблиц базы данных..."
+# Пересоздаём схему БД (drop_all + create_all чтобы применить актуальную схему)
+echo "📦 Инициализация схемы базы данных..."
 python -c "
 import asyncio, sys
 sys.path.insert(0, '.')
 from app.core.database import engine, Base
-import app.models  # регистрируем все модели
+import app.models
 async def init():
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    print('   ✅ Таблицы готовы')
+    print('   ✅ Схема готова')
 asyncio.run(init())
 "
 
-# Загружаем демо-данные (пропускаем, если уже загружены)
+# Загружаем демо-данные
 echo "🌱 Загрузка демо-данных..."
 python -m app.utils.demo_data
 
