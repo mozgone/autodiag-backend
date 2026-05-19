@@ -53,6 +53,9 @@ export const getOverview = () => api.get('/analytics/overview').then((r) => r.da
 export const getRevenueChart = () => api.get('/analytics/chart/revenue').then((r) => r.data);
 export const getRanking = () => api.get('/analytics/ranking').then((r) => r.data);
 
+// App settings
+export const getAppInfo = () => api.get('/settings/info').then((r) => r.data);
+
 // CRM
 export const getCRMStatus = () => api.get('/crm/status').then((r) => r.data);
 export const connectCRM = (data: { crm_type: string; subdomain?: string; access_token?: string }) =>

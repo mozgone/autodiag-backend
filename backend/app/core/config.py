@@ -32,6 +32,8 @@ class Settings(BaseSettings):
 
     # Telegram Bot
     TELEGRAM_BOT_TOKEN: Optional[str] = None
+    TELEGRAM_BOT_USERNAME: Optional[str] = None   # например sellex_analytics_bot (без @)
+    APP_URL: Optional[str] = None                 # https://yourapp.up.railway.app
 
     # amoCRM (опционально)
     AMOCRM_CLIENT_ID: Optional[str] = None

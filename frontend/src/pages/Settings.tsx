@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCRMStatus, connectCRM, getMe, telegramUnlink } from '../api/client';
+import { getCRMStatus, connectCRM, getMe, telegramUnlink, getAppInfo } from '../api/client';
 import { useAuthStore } from '../store/auth';
 import toast from 'react-hot-toast';
 import { CheckCircle, Plug, Send, LinkIcon, Unlink } from 'lucide-react';
@@ -9,6 +9,7 @@ export default function Settings() {
   const user = useAuthStore((s) => s.user);
   const { data: crmStatus } = useQuery({ queryKey: ['crm-status'], queryFn: getCRMStatus });
   const { data: userProfile } = useQuery({ queryKey: ['me'], queryFn: getMe });
+  const { data: appInfo }     = useQuery({ queryKey: ['app-info'], queryFn: getAppInfo });
   const [crmType, setCrmType] = useState('mock');
   const [subdomain, setSubdomain] = useState('');
   const [token, setToken] = useState('');
@@ -24,7 +25,9 @@ export default function Settings() {
     onError: () => toast.error('Ошибка отвязки'),
   });
 
-  const isTgLinked = !!userProfile?.telegram_id;
+  const isTgLinked  = !!userProfile?.telegram_id;
+  const botLink     = appInfo?.bot_link     || 'https://t.me/sellex_bot';
+  const miniAppUrl  = appInfo?.mini_app_url || null;
 
   const connectMutation = useMutation({
     mutationFn: () => connectCRM({ crm_type: crmType, subdomain, access_token: token }),
@@ -146,7 +149,7 @@ export default function Settings() {
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <a
-                href="https://t.me/sellex_bot/app"
+                href={miniAppUrl || botLink}
                 target="_blank" rel="noreferrer"
                 style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
               >
@@ -173,7 +176,7 @@ export default function Settings() {
               </ol>
             </div>
             <a
-              href="https://t.me/sellex_bot"
+              href={botLink}
               target="_blank" rel="noreferrer"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
             >
