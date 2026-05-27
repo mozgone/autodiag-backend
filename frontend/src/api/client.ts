@@ -58,5 +58,6 @@ export const getAppInfo = () => api.get('/settings/info').then((r) => r.data);
 
 // CRM
 export const getCRMStatus = () => api.get('/crm/status').then((r) => r.data);
-export const connectCRM = (data: { crm_type: string; subdomain?: string; access_token?: string }) =>
+export const connectCRM = (data: { crm_type: string; subdomain?: string; access_token?: string; consent?: boolean }) =>
   api.post('/crm/connect', data).then((r) => r.data);
+export const syncCRM = () => api.post('/crm/sync').then((r) => r.data);

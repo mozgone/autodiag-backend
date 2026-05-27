@@ -15,6 +15,9 @@ class Tenant(Base):
     crm_type: Mapped[str] = mapped_column(String(50), default="mock")  # mock, amocrm, bitrix24
     crm_config: Mapped[str] = mapped_column(Text, nullable=True)  # JSON config
     consent_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    last_sync_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    sync_status: Mapped[str] = mapped_column(String(20), nullable=True)   # ok | error | syncing
+    sync_error: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
