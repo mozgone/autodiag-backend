@@ -39,25 +39,26 @@ export default function Settings() {
   });
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0',
+    width: '100%', padding: '11px 14px', border: '1.5px solid rgba(255,255,255,0.1)',
     borderRadius: 10, fontSize: 14, outline: 'none',
+    background: 'rgba(255,255,255,0.04)', color: '#f1f5f9',
   };
   const card: React.CSSProperties = {
-    background: '#fff', borderRadius: 16, padding: 28, border: '1px solid #e2e8f0',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+    background: '#1a1a2e', borderRadius: 16, padding: 28, border: '1px solid rgba(255,255,255,0.07)',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
   };
 
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1e293b' }}>Настройки</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#f1f5f9' }}>Настройки</h1>
         <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>Управление аккаунтом и подключение CRM</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* Профиль */}
         <div style={card}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: '#1e293b' }}>Профиль</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: '#f1f5f9' }}>Профиль</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
               { label: 'Имя', value: user?.full_name || '' },
@@ -66,7 +67,7 @@ export default function Settings() {
             ].map(({ label, value }) => (
               <div key={label}>
                 <label style={{ fontSize: 12, fontWeight: 500, color: '#64748b', display: 'block', marginBottom: 6 }}>{label}</label>
-                <input value={value} readOnly style={{ ...inputStyle, background: '#f8fafc' }} />
+                <input value={value} readOnly style={{ ...inputStyle, background: 'rgba(255,255,255,0.03)' }} />
               </div>
             ))}
           </div>
@@ -75,9 +76,9 @@ export default function Settings() {
         {/* Подключение CRM */}
         <div style={card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Подключение CRM</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>Подключение CRM</h2>
             {crmStatus && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#10b981', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#2dd4bf', fontWeight: 600 }}>
                 <CheckCircle size={14} /> {crmStatus.crm_type}
               </div>
             )}
@@ -86,7 +87,7 @@ export default function Settings() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: '#64748b', display: 'block', marginBottom: 6 }}>Тип CRM</label>
-              <select value={crmType} onChange={(e) => setCrmType(e.target.value)} style={inputStyle}>
+              <select value={crmType} onChange={(e) => setCrmType(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                 <option value="mock">Демо-данные (без CRM)</option>
                 <option value="amocrm">amoCRM</option>
               </select>
@@ -105,9 +106,9 @@ export default function Settings() {
               </>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: 14, background: '#fef3c7', borderRadius: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: 14, background: 'rgba(251,146,60,0.1)', borderRadius: 10, border: '1px solid rgba(251,146,60,0.2)' }}>
               <input type="checkbox" id="consent" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 2 }} />
-              <label htmlFor="consent" style={{ fontSize: 12, color: '#92400e', lineHeight: 1.5, cursor: 'pointer' }}>
+              <label htmlFor="consent" style={{ fontSize: 12, color: '#fb923c', lineHeight: 1.5, cursor: 'pointer' }}>
                 Подтверждаю, что получены все необходимые согласия сотрудников на обработку персональных данных.
               </label>
             </div>
@@ -117,7 +118,7 @@ export default function Settings() {
               disabled={connectMutation.isPending || (crmType !== 'mock' && !consent)}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '12px', background: '#6366f1', color: '#fff', border: 'none',
+                padding: '12px', background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', color: '#fff', border: 'none',
                 borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
                 opacity: (connectMutation.isPending || (crmType !== 'mock' && !consent)) ? 0.6 : 1,
               }}
@@ -132,33 +133,33 @@ export default function Settings() {
       {/* Telegram Mini App */}
       <div style={{ ...card, marginTop: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Telegram Mini App</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>Telegram Mini App</h2>
           {isTgLinked ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#10b981', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#2dd4bf', fontWeight: 600 }}>
               <CheckCircle size={14} /> Привязан
             </div>
           ) : (
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>Не привязан</div>
+            <div style={{ fontSize: 12, color: '#64748b' }}>Не привязан</div>
           )}
         </div>
 
         {isTgLinked ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ padding: '12px 14px', background: '#ecfdf5', borderRadius: 10, fontSize: 13, color: '#065f46' }}>
+            <div style={{ padding: '12px 14px', background: 'rgba(45,212,191,0.1)', borderRadius: 10, fontSize: 13, color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.2)' }}>
               ✅ Ваш Telegram-аккаунт привязан. Открывайте Sellex прямо из бота — авторизация автоматическая.
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <a
                 href={miniAppUrl || botLink}
                 target="_blank" rel="noreferrer"
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
               >
                 <Send size={15} /> Открыть в Telegram
               </a>
               <button
                 onClick={() => unlinkTgMutation.mutate()}
                 disabled={unlinkTgMutation.isPending}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '11px 14px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '11px 14px', background: 'rgba(244,114,182,0.1)', color: '#f472b6', border: '1px solid rgba(244,114,182,0.25)', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
               >
                 <Unlink size={15} /> Отвязать
               </button>
@@ -166,7 +167,7 @@ export default function Settings() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: 10, fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
+            <div style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, fontSize: 13, color: '#94a3b8', lineHeight: 1.6, border: '1px solid rgba(255,255,255,0.07)' }}>
               <strong>Как привязать аккаунт:</strong>
               <ol style={{ margin: '8px 0 0 16px', padding: 0 }}>
                 <li>Откройте бота Sellex в Telegram</li>
@@ -178,7 +179,7 @@ export default function Settings() {
             <a
               href={botLink}
               target="_blank" rel="noreferrer"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
             >
               <Send size={16} /> Перейти к боту Sellex
             </a>
@@ -186,7 +187,7 @@ export default function Settings() {
         )}
       </div>
 
-      <div style={{ marginTop: 20, padding: '12px 16px', background: '#fef2f2', borderRadius: 10, fontSize: 12, color: '#991b1b', border: '1px solid #fecaca' }}>
+      <div style={{ marginTop: 20, padding: '12px 16px', background: 'rgba(244,114,182,0.1)', borderRadius: 10, fontSize: 12, color: '#f472b6', border: '1px solid rgba(244,114,182,0.25)' }}>
         ⚠️ Все аналитические выводы системы носят рекомендательный характер. Система является обработчиком данных — ответственность оператора несёт компания-клиент.
       </div>
     </div>

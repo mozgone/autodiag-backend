@@ -13,7 +13,7 @@ export default function Analytics() {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1e293b' }}>Аналитика</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#f1f5f9' }}>Аналитика</h1>
         <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>Детальные отчёты по отделу продаж</p>
       </div>
 
@@ -22,39 +22,39 @@ export default function Analytics() {
       </div>
 
       {/* Таблица рейтинга */}
-      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Рейтинг менеджеров</h3>
+      <div style={{ background: '#1a1a2e', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>Рейтинг менеджеров</h3>
         </div>
         {isLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Загрузка...</div>
+          <div style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>Загрузка...</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
                 {['#', 'Менеджер', 'Выручка', 'Конверсия', 'Звонки', 'План', 'Тренд'].map((h) => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>{h}</th>
+                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {ranking.map((item: any) => (
-                <tr key={item.manager_id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '14px 16px', fontWeight: 700, color: item.rank <= 3 ? '#d97706' : '#94a3b8' }}>{item.rank}</td>
-                  <td style={{ padding: '14px 16px', fontWeight: 600, color: '#1e293b' }}>{item.full_name}</td>
-                  <td style={{ padding: '14px 16px', color: '#10b981', fontWeight: 600 }}>{fmt(item.revenue)}</td>
+                <tr key={item.manager_id} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={{ padding: '14px 16px', fontWeight: 700, color: item.rank <= 3 ? '#fb923c' : '#64748b' }}>{item.rank}</td>
+                  <td style={{ padding: '14px 16px', fontWeight: 600, color: '#f1f5f9' }}>{item.full_name}</td>
+                  <td style={{ padding: '14px 16px', color: '#2dd4bf', fontWeight: 600 }}>{fmt(item.revenue)}</td>
                   <td style={{ padding: '14px 16px', color: '#64748b' }}>{item.conversion_rate?.toFixed(1)}%</td>
                   <td style={{ padding: '14px 16px', color: '#64748b' }}>{item.calls_count}</td>
                   <td style={{ padding: '14px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ flex: 1, height: 6, background: '#f1f5f9', borderRadius: 3 }}>
-                        <div style={{ height: '100%', width: `${Math.min(item.plan_completion, 100)}%`, background: item.plan_completion >= 100 ? '#10b981' : item.plan_completion >= 70 ? '#f59e0b' : '#ef4444', borderRadius: 3 }} />
+                      <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
+                        <div style={{ height: '100%', width: `${Math.min(item.plan_completion, 100)}%`, background: item.plan_completion >= 100 ? '#2dd4bf' : item.plan_completion >= 70 ? '#fb923c' : '#f472b6', borderRadius: 3 }} />
                       </div>
                       <span style={{ fontSize: 12, color: '#64748b', width: 36 }}>{item.plan_completion?.toFixed(0)}%</span>
                     </div>
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    {item.trend === 'up' ? <TrendingUp size={16} color="#10b981" /> : <TrendingDown size={16} color="#ef4444" />}
+                    {item.trend === 'up' ? <TrendingUp size={16} color="#2dd4bf" /> : <TrendingDown size={16} color="#f472b6" />}
                   </td>
                 </tr>
               ))}

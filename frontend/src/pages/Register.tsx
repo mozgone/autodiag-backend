@@ -8,13 +8,14 @@ import { useAuthStore } from '../store/auth';
 const inputWrap: React.CSSProperties = { position: 'relative', width: '100%' };
 const inputBase: React.CSSProperties = {
   width: '100%', padding: '12px 14px 12px 40px',
-  border: '1.5px solid #e2e8f0', borderRadius: 10,
+  border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 10,
   fontSize: 14, outline: 'none', boxSizing: 'border-box',
   transition: 'border-color 0.15s',
+  background: 'rgba(255,255,255,0.04)', color: '#f1f5f9',
 };
 const iconPos: React.CSSProperties = {
   position: 'absolute', left: 13, top: '50%',
-  transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none',
+  transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none',
 };
 
 interface FieldProps {
@@ -30,7 +31,7 @@ interface FieldProps {
 function Field({ label, icon, value, onChange, type = 'text', placeholder, suffix }: FieldProps) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#94a3b8', marginBottom: 6 }}>
         {label}
       </label>
       <div style={inputWrap}>
@@ -39,8 +40,8 @@ function Field({ label, icon, value, onChange, type = 'text', placeholder, suffi
           type={type} value={value} placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)} required
           style={inputBase}
-          onFocus={(e) => (e.target.style.borderColor = '#6366f1')}
-          onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+          onFocus={(e) => (e.target.style.borderColor = '#2dd4bf')}
+          onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
         />
         {suffix && (
           <span style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)' }}>
@@ -86,21 +87,22 @@ export default function Register() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+      background: '#0f0f1a',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
     }}>
       <div style={{
-        background: '#fff', borderRadius: 20, padding: '36px 40px',
-        width: '100%', maxWidth: 440, boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
+        background: '#1a1a2e', borderRadius: 20, padding: '36px 40px',
+        width: '100%', maxWidth: 440, boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+        border: '1px solid rgba(255,255,255,0.07)',
       }}>
         {/* Лого */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-            <div style={{ background: '#6366f1', borderRadius: 16, padding: 14 }}>
+            <div style={{ background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', borderRadius: 16, padding: 14 }}>
               <TrendingUp size={30} color="#fff" />
             </div>
           </div>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#1e293b', marginBottom: 4 }}>Sellex</h1>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', marginBottom: 4 }}>Sellex</h1>
           <p style={{ color: '#64748b', fontSize: 14 }}>Регистрация новой компании</p>
         </div>
 
@@ -138,7 +140,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 0 }}
               >
                 {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -149,7 +151,7 @@ export default function Register() {
             type="submit" disabled={loading}
             style={{
               width: '100%', padding: '13px', marginTop: 6,
-              background: loading ? '#a5b4fc' : '#6366f1',
+              background: loading ? 'rgba(45,212,191,0.5)' : 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)',
               color: '#fff', border: 'none', borderRadius: 10,
               fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'background 0.15s',
@@ -161,7 +163,7 @@ export default function Register() {
 
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#64748b' }}>
           Уже есть аккаунт?{' '}
-          <Link to="/login" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>
+          <Link to="/login" style={{ color: '#2dd4bf', fontWeight: 600, textDecoration: 'none' }}>
             Войти
           </Link>
         </p>

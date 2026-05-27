@@ -19,20 +19,21 @@ import { Manager, OverviewStats, ManagerDetail, Recommendation } from '../types'
 // ─── Общие стили ──────────────────────────────────────────────────────────────
 
 const C = {
-  primary:  '#6366f1',
-  dark:     '#1e293b',
+  primary:  '#2dd4bf',
+  purple:   '#a78bfa',
+  dark:     '#f1f5f9',
   muted:    '#64748b',
-  bg:       '#f8fafc',
-  white:    '#fff',
-  border:   '#e2e8f0',
-  success:  '#10b981',
-  warning:  '#f59e0b',
-  danger:   '#ef4444',
+  bg:       '#0f0f1a',
+  card:     '#1a1a2e',
+  border:   'rgba(255,255,255,0.07)',
+  success:  '#2dd4bf',
+  warning:  '#fb923c',
+  danger:   '#f472b6',
 };
 
 const card = (extra?: React.CSSProperties): React.CSSProperties => ({
-  background: C.white, borderRadius: 16, padding: 16,
-  border: `1px solid ${C.border}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+  background: C.card, borderRadius: 16, padding: 16,
+  border: `1px solid ${C.border}`,
   ...extra,
 });
 
@@ -71,15 +72,16 @@ function LinkAccountForm({ initData, onLinked }: { initData: string; onLinked: (
   };
 
   const inp: React.CSSProperties = {
-    width: '100%', padding: '12px 14px', border: `1.5px solid ${C.border}`,
+    width: '100%', padding: '12px 14px', border: `1.5px solid rgba(255,255,255,0.1)`,
     borderRadius: 10, fontSize: 14, outline: 'none', boxSizing: 'border-box',
+    background: 'rgba(255,255,255,0.04)', color: '#f1f5f9',
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: `linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: C.white, borderRadius: 20, padding: 28, width: '100%', maxWidth: 380, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: C.card, borderRadius: 20, padding: 28, width: '100%', maxWidth: 380, boxShadow: '0 20px 40px rgba(0,0,0,0.5)', border: `1px solid ${C.border}` }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ background: C.primary, borderRadius: 14, padding: 12, display: 'inline-flex', marginBottom: 12 }}>
+          <div style={{ background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', borderRadius: 14, padding: 12, display: 'inline-flex', marginBottom: 12 }}>
             <TrendingUp size={28} color="#fff" />
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: C.dark, marginBottom: 6 }}>Sellex</h1>
@@ -93,8 +95,8 @@ function LinkAccountForm({ initData, onLinked }: { initData: string; onLinked: (
             <label style={{ fontSize: 12, fontWeight: 500, color: C.muted, display: 'block', marginBottom: 6 }}>Email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.ru" required style={inp}
-              onFocus={(e) => (e.target.style.borderColor = C.primary)}
-              onBlur={(e) => (e.target.style.borderColor = C.border)}
+              onFocus={(e) => (e.target.style.borderColor = '#2dd4bf')}
+              onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
             />
           </div>
           <div style={{ marginBottom: 20, position: 'relative' }}>
@@ -102,8 +104,8 @@ function LinkAccountForm({ initData, onLinked }: { initData: string; onLinked: (
             <input type={showPwd ? 'text' : 'password'} value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••" required style={{ ...inp, paddingRight: 40 }}
-              onFocus={(e) => (e.target.style.borderColor = C.primary)}
-              onBlur={(e) => (e.target.style.borderColor = C.border)}
+              onFocus={(e) => (e.target.style.borderColor = '#2dd4bf')}
+              onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
             />
             <button type="button" onClick={() => setShowPwd(!showPwd)}
               style={{ position: 'absolute', right: 12, top: 30, background: 'none', border: 'none', color: C.muted, cursor: 'pointer' }}>
@@ -111,7 +113,7 @@ function LinkAccountForm({ initData, onLinked }: { initData: string; onLinked: (
             </button>
           </div>
           <button type="submit" disabled={loading}
-            style={{ width: '100%', padding: '13px', background: loading ? '#a5b4fc' : C.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}>
+            style={{ width: '100%', padding: '13px', background: loading ? 'rgba(45,212,191,0.5)' : 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? 'Вход...' : 'Войти и привязать'}
           </button>
         </form>
@@ -158,7 +160,7 @@ function TgDashboard() {
           <span>Прогресс плана</span>
           <span style={{ color: planColor }}>{plan.toFixed(0)}%</span>
         </div>
-        <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4 }}>
+        <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }}>
           <div style={{ height: '100%', width: `${Math.min(plan, 100)}%`, background: planColor, borderRadius: 4, transition: 'width 0.5s' }} />
         </div>
         <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>
@@ -168,11 +170,11 @@ function TgDashboard() {
 
       {/* Алерт рисков */}
       {ov.at_risk_deals > 0 && (
-        <div style={{ padding: '12px 14px', background: '#fef2f2', borderRadius: 12, border: `1px solid #fecaca`, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ padding: '12px 14px', background: 'rgba(244,114,182,0.1)', borderRadius: 12, border: `1px solid rgba(244,114,182,0.25)`, display: 'flex', alignItems: 'center', gap: 10 }}>
           <AlertTriangle size={18} color={C.danger} />
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#991b1b' }}>Сделки под риском: {ov.at_risk_deals}</div>
-            <div style={{ fontSize: 11, color: '#b91c1c' }}>Требуют внимания</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#f472b6' }}>Сделки под риском: {ov.at_risk_deals}</div>
+            <div style={{ fontSize: 11, color: '#f472b6', opacity: 0.8 }}>Требуют внимания</div>
           </div>
         </div>
       )}
@@ -194,13 +196,15 @@ function TgManagers({ onSelectManager }: { onSelectManager: (id: string) => void
         const initials = m.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2);
         return (
           <div key={m.id} onClick={() => onSelectManager(m.id)}
-            style={{ ...card({ marginBottom: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }) }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+            style={{ ...card({ marginBottom: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }) }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.border = '1px solid rgba(45,212,191,0.3)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.border = `1px solid ${C.border}`; }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
               {initials}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, color: C.dark, fontSize: 14, marginBottom: 4 }}>{m.full_name}</div>
-              <div style={{ height: 5, background: '#f1f5f9', borderRadius: 3 }}>
+              <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
                 <div style={{ height: '100%', width: `${Math.min(plan, 100)}%`, background: planColor, borderRadius: 3 }} />
               </div>
             </div>
@@ -228,22 +232,22 @@ function TgManagerDetail({ id, onBack }: { id: string; onBack: () => void }) {
   if (!m) return null;
 
   const recConfig: Record<string, { color: string; bg: string; icon: React.ElementType }> = {
-    strength: { color: C.success, bg: '#ecfdf5', icon: CheckCircle },
-    growth:   { color: C.warning, bg: '#fffbeb', icon: Lightbulb },
-    alert:    { color: C.danger,  bg: '#fef2f2', icon: AlertTriangle },
-    forecast: { color: C.primary, bg: '#eef2ff', icon: TrendingUp },
+    strength: { color: '#2dd4bf', bg: 'rgba(45,212,191,0.1)', icon: CheckCircle },
+    growth:   { color: '#fb923c', bg: 'rgba(251,146,60,0.1)', icon: Lightbulb },
+    alert:    { color: '#f472b6', bg: 'rgba(244,114,182,0.1)', icon: AlertTriangle },
+    forecast: { color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', icon: TrendingUp },
   };
 
   return (
     <div style={{ padding: '16px 16px 0' }}>
       {/* Кнопка назад (для браузера, в TG используется BackButton) */}
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: C.primary, fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
         ← Назад
       </button>
 
       {/* Шапка */}
       <div style={card({ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 })}>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, fontWeight: 700 }}>
+        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, fontWeight: 700 }}>
           {m.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
         </div>
         <div>
@@ -272,12 +276,12 @@ function TgManagerDetail({ id, onBack }: { id: string; onBack: () => void }) {
             const cfg = recConfig[rec.rec_type] || recConfig.forecast;
             const Icon = cfg.icon;
             return (
-              <div key={rec.id} style={{ ...card({ marginBottom: 8, background: cfg.bg, border: `1px solid ${cfg.color}25` }) }}>
+              <div key={rec.id} style={{ ...card({ marginBottom: 8, background: cfg.bg, border: `1px solid ${cfg.color}40` }) }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                   <Icon size={14} color={cfg.color} />
                   <span style={{ fontSize: 12, fontWeight: 600, color: cfg.color }}>{rec.title}</span>
                 </div>
-                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>{rec.content}</div>
+                <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5 }}>{rec.content}</div>
               </div>
             );
           })}
@@ -299,7 +303,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   return (
     <div style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
-      background: '#fff', borderTop: `1px solid ${C.border}`,
+      background: '#13132a', borderTop: `1px solid rgba(255,255,255,0.07)`,
       display: 'flex', padding: '8px 0 max(8px, env(safe-area-inset-bottom))',
       zIndex: 100,
     }}>
@@ -308,7 +312,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
           style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
-            color: tab === key ? C.primary : C.muted, transition: 'color 0.15s',
+            color: tab === key ? '#2dd4bf' : C.muted, transition: 'color 0.15s',
           }}>
           <Icon size={22} />
           <span style={{ fontSize: 11, fontWeight: tab === key ? 600 : 400 }}>{label}</span>
@@ -323,16 +327,16 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 function TgHeader({ onLogout }: { onLogout: () => void }) {
   return (
     <div style={{
-      background: C.primary, padding: '14px 16px',
+      background: '#13132a', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '14px 16px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       position: 'sticky', top: 0, zIndex: 50,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <TrendingUp size={20} color="#fff" />
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 17 }}>Sellex</span>
+        <TrendingUp size={20} color="#2dd4bf" />
+        <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 17 }}>Sellex</span>
       </div>
       <button onClick={onLogout}
-        style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', color: '#fff' }}>
+        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', color: '#64748b' }}>
         <LogOut size={16} />
       </button>
     </div>
@@ -354,8 +358,8 @@ export default function TelegramApp() {
       tg.ready();
       tg.expand();
       // Устанавливаем наши цвета, а не Telegram-овские
-      tg.setHeaderColor('#6366f1');
-      tg.setBackgroundColor('#f8fafc');
+      tg.setHeaderColor('#13132a');
+      tg.setBackgroundColor('#0f0f1a');
     }
   }, [tg]);
 
@@ -384,7 +388,7 @@ export default function TelegramApp() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.bg }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ background: C.primary, borderRadius: 16, padding: 14, display: 'inline-flex', marginBottom: 12 }}>
+          <div style={{ background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)', borderRadius: 16, padding: 14, display: 'inline-flex', marginBottom: 12 }}>
             <TrendingUp size={28} color="#fff" />
           </div>
           <div style={{ color: C.muted, fontSize: 14 }}>Загрузка...</div>
@@ -400,7 +404,7 @@ export default function TelegramApp() {
 
   // Авторизован → мини-приложение
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Inter', sans-serif", maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Inter', sans-serif", maxWidth: 480, margin: '0 auto', color: '#f1f5f9' }}>
       {/* Шапка только если не в Telegram (Telegram своя шапка через setHeaderColor) */}
       {!isInTelegram && <TgHeader onLogout={handleLogout} />}
 

@@ -22,9 +22,9 @@ export default function ManagerRadar({ stats }: Props) {
   return (
     <ResponsiveContainer width="100%" height={200}>
       <RadarChart data={data}>
-        <PolarGrid stroke="#e2e8f0" />
+        <PolarGrid stroke="rgba(255,255,255,0.1)" />
         <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: '#64748b' }} />
-        <Radar dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.15} strokeWidth={2} />
+        <Radar dataKey="value" stroke="#2dd4bf" fill="#2dd4bf" fillOpacity={0.15} strokeWidth={2} />
       </RadarChart>
     </ResponsiveContainer>
   );
