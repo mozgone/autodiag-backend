@@ -67,3 +67,42 @@ class MockCRMConnector(BaseCRMConnector):
                 "created_at": (datetime.utcnow() - timedelta(days=rng.randint(0, 30))).isoformat(),
             })
         return activities
+
+    async def get_notes(self, manager_id: str, since: datetime, limit: int = 50) -> List[Dict[str, Any]]:
+        rng = random.Random(manager_id + "notes")
+        notes = []
+        templates = [
+            "Созвонились с клиентом, обсудили условия договора. Клиент заинтересован.",
+            "Отправил КП, жду ответа. Клиент сказал решит в течение недели.",
+            "Входящий звонок — вопросы по интеграции. Ответил подробно.",
+            "Follow-up после встречи. Клиент попросил время подумать.",
+            "Провёл демо. Положительная реакция, переходим к согласованию договора.",
+        ]
+        for i in range(min(limit, rng.randint(5, 20))):
+            days_ago = rng.randint(0, 30)
+            created = (datetime.utcnow() - timedelta(days=days_ago)).isoformat()
+            notes.append({
+                "id": f"{manager_id}_note_{i}",
+                "type": "call" if rng.random() > 0.4 else "note",
+                "text": rng.choice(templates),
+                "created_at": created,
+            })
+        return notes
+
+    async def get_deals_with_fields(self, manager_id: str, since: datetime) -> List[Dict[str, Any]]:
+        rng = random.Random(manager_id + "fields")
+        deals = await self.get_deals(manager_id, since)
+        fields = ["Бюджет", "Источник лида", "Дата следующего контакта", "Отрасль клиента"]
+        result = []
+        for d in deals[:30]:
+            result.append({
+                "id": d["id"],
+                "title": d["title"],
+                "amount": d["amount"],
+                "has_contact": rng.random() > 0.2,
+                "custom_fields": [
+                    {"field_id": str(i), "name": f, "is_empty": rng.random() < 0.35}
+                    for i, f in enumerate(fields)
+                ],
+            })
+        return result

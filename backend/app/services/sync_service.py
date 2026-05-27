@@ -1,6 +1,8 @@
 """
 Сервис синхронизации данных из CRM в аналитическое хранилище.
+Создаёт снимки за день, неделю и месяц для каждого менеджера.
 """
+import calendar
 import json
 import logging
 from datetime import datetime, timedelta
@@ -16,9 +18,8 @@ from app.connectors.base import BaseCRMConnector
 
 logger = logging.getLogger(__name__)
 
-AMO_STATUS_WON = 142
-AMO_STATUS_LOST = 143
 
+# ── Helpers ────────────────────────────────────────────────────────────────────
 
 def get_connector(tenant: Tenant) -> BaseCRMConnector:
     if tenant.crm_type == "amocrm":
@@ -32,6 +33,24 @@ def get_connector(tenant: Tenant) -> BaseCRMConnector:
     return MockCRMConnector()
 
 
+def _month_range(year: int, month: int):
+    """Возвращает (start, end) для заданного месяца."""
+    last_day = calendar.monthrange(year, month)[1]
+    return datetime(year, month, 1), datetime(year, month, last_day, 23, 59, 59)
+
+
+def _prev_months(n: int) -> List[tuple]:
+    """Возвращает список (year, month) за последние n месяцев (от старого к новому)."""
+    result = []
+    y, m = datetime.utcnow().year, datetime.utcnow().month
+    for _ in range(n):
+        result.insert(0, (y, m))
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    return result
+
+
 def _parse_dt(s: Optional[str]) -> Optional[datetime]:
     if not s:
         return None
@@ -41,6 +60,8 @@ def _parse_dt(s: Optional[str]) -> Optional[datetime]:
         return None
 
 
+# ── Snapshot computation ───────────────────────────────────────────────────────
+
 def _compute_snapshot(
     deals: List[Dict],
     activities: List[Dict],
@@ -48,6 +69,7 @@ def _compute_snapshot(
     period_start: datetime,
     period_end: datetime,
     tenant_id,
+    period_type: str = "weekly",
 ) -> MetricSnapshot:
     period_deals = [
         d for d in deals
@@ -70,19 +92,19 @@ def _compute_snapshot(
     call_durs = [int(c.get("duration_seconds") or 0) for c in calls]
     calls_dur_avg = (sum(call_durs) / len(call_durs)) if call_durs else 0.0
 
-    # CRM fill rate: % сделок с указанной суммой (базовая метрика качества)
     with_price = [d for d in period_deals if float(d.get("amount") or 0) > 0]
     crm_fill = (len(with_price) / created * 100) if created > 0 else 0.0
 
     monthly_plan = max(float(manager.monthly_plan or 0), 1.0)
-    # Недельная выручка → месячная (×4.33)
-    monthly_est = revenue * 4.33
+    # Нормализуем выручку периода к месячной
+    multipliers = {"daily": 30.0, "weekly": 4.33, "monthly": 1.0}
+    monthly_est = revenue * multipliers.get(period_type, 4.33)
     plan_pct = round(monthly_est / monthly_plan * 100, 1)
 
     return MetricSnapshot(
         tenant_id=tenant_id,
         manager_id=manager.id,
-        period_type="weekly",
+        period_type=period_type,
         period_start=period_start,
         calls_count=len(calls) if calls else len(period_acts),
         calls_duration_avg=round(calls_dur_avg, 1),
@@ -153,19 +175,18 @@ def _make_recommendations(
                 "Заполнение бюджета сделки обязательно для точного прогноза."
             ),
         ))
-
     return recs
 
+
+# ── Main sync ─────────────────────────────────────────────────────────────────
 
 async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
     """
     Синхронизирует данные из CRM для тенанта.
-    Возвращает статистику синхронизации.
-    Бросает ValueError с понятным сообщением при ошибке.
+    Создаёт снимки за последние 30 дней, 12 недель, 12 месяцев.
     """
     connector = get_connector(tenant)
 
-    # 1. Проверяем подключение
     try:
         ok = await connector.test_connection()
     except Exception as e:
@@ -173,14 +194,14 @@ async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
     if not ok:
         raise ValueError("Не удалось подключиться к CRM. Проверьте токен и поддомен.")
 
-    # 2. Получаем менеджеров
     crm_managers = await connector.get_managers()
     if not crm_managers:
         raise ValueError("В CRM не найдено ни одного менеджера.")
 
-    since = datetime.utcnow() - timedelta(weeks=8)
+    # Берём данные за последний год (покрывает все периоды)
+    since = datetime.utcnow() - timedelta(days=365)
 
-    # 3. Upsert менеджеров (по crm_id)
+    # Upsert менеджеров по crm_id
     db_managers: List[Manager] = []
     for cm in crm_managers:
         res = await db.execute(
@@ -207,13 +228,13 @@ async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
         await db.flush()
         db_managers.append(mgr)
 
-    # 4. Очищаем старые снимки и рекомендации
+    # Очищаем старые снимки и рекомендации
     await db.execute(delete(MetricSnapshot).where(MetricSnapshot.tenant_id == tenant.id))
     await db.execute(delete(Recommendation).where(Recommendation.tenant_id == tenant.id))
 
     total_deals = 0
+    now = datetime.utcnow()
 
-    # 5. Для каждого менеджера — загружаем и вычисляем
     for mgr in db_managers:
         try:
             deals = await connector.get_deals(mgr.crm_id, since)
@@ -223,19 +244,88 @@ async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
             deals, activities = [], []
 
         total_deals += len(deals)
-        snaps: List[MetricSnapshot] = []
+        weekly_snaps: List[MetricSnapshot] = []
 
-        for week in range(4):
-            p_start = datetime.utcnow() - timedelta(weeks=4 - week)
-            p_end = p_start + timedelta(weeks=1)
-            snap = _compute_snapshot(deals, activities, mgr, p_start, p_end, tenant.id)
+        # ── Дневные снимки: последние 30 дней ─────────────────────────────────
+        for d in range(30):
+            day = now - timedelta(days=29 - d)
+            p_start = datetime(day.year, day.month, day.day, 0, 0, 0)
+            p_end = datetime(day.year, day.month, day.day, 23, 59, 59)
+            snap = _compute_snapshot(deals, activities, mgr, p_start, p_end, tenant.id, "daily")
             db.add(snap)
-            snaps.append(snap)
 
-        for rec in _make_recommendations(mgr, snaps, tenant.id):
+        # ── Недельные снимки: последние 12 недель ──────────────────────────────
+        for w in range(12):
+            p_start = now - timedelta(weeks=11 - w)
+            p_end = p_start + timedelta(weeks=1)
+            snap = _compute_snapshot(deals, activities, mgr, p_start, p_end, tenant.id, "weekly")
+            db.add(snap)
+            weekly_snaps.append(snap)
+
+        # ── Месячные снимки: последние 12 месяцев ─────────────────────────────
+        for year, month in _prev_months(12):
+            p_start, p_end = _month_range(year, month)
+            snap = _compute_snapshot(deals, activities, mgr, p_start, p_end, tenant.id, "monthly")
+            db.add(snap)
+
+        # Рекомендации на основе последних недельных снимков
+        for rec in _make_recommendations(mgr, weekly_snaps, tenant.id):
             db.add(rec)
 
-    # 6. Обновляем статус тенанта
+        # AI-анализ чатов и полей CRM
+        try:
+            notes_data = await connector.get_notes(mgr.crm_id, since, limit=30)
+            fields_data = await connector.get_deals_with_fields(mgr.crm_id, since)
+
+            notes_texts = [n["text"] for n in notes_data if n.get("text")]
+
+            # Процент заполненности по каждому полю
+            field_fill: Dict[str, float] = {}
+            if fields_data:
+                all_field_names = {
+                    cf["name"]
+                    for d in fields_data
+                    for cf in d.get("custom_fields", [])
+                }
+                for fname in all_field_names:
+                    total = sum(
+                        1 for d in fields_data
+                        for cf in d.get("custom_fields", []) if cf["name"] == fname
+                    )
+                    filled = sum(
+                        1 for d in fields_data
+                        for cf in d.get("custom_fields", [])
+                        if cf["name"] == fname and not cf["is_empty"]
+                    )
+                    field_fill[fname] = round(filled / total * 100, 1) if total else 0.0
+
+            last_snap = weekly_snaps[-1] if weekly_snaps else None
+            if last_snap:
+                stats_for_ai = {
+                    "deals_created": last_snap.deals_created,
+                    "deals_won": last_snap.deals_won,
+                    "revenue": last_snap.revenue,
+                    "conversion_rate": last_snap.conversion_rate,
+                    "plan_completion_forecast": last_snap.plan_completion_forecast,
+                    "calls_count": last_snap.calls_count,
+                    "crm_fill_rate": last_snap.crm_fill_rate,
+                }
+                from app.services.analysis_agent import analyze_manager
+                ai_recs = await analyze_manager(
+                    mgr.full_name, stats_for_ai, notes_texts, field_fill
+                )
+                for r in ai_recs:
+                    db.add(Recommendation(
+                        tenant_id=tenant.id,
+                        manager_id=mgr.id,
+                        rec_type=r.get("type", "growth"),
+                        title=str(r.get("title", ""))[:499],
+                        content=str(r.get("content", "")),
+                        priority=max(1, min(3, int(r.get("priority", 2)))),
+                    ))
+        except Exception as e:
+            logger.warning("AI-анализ не выполнен для %s: %s", mgr.full_name, e)
+
     tenant.last_sync_at = datetime.utcnow()
     tenant.sync_status = "ok"
     tenant.sync_error = None

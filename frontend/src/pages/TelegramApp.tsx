@@ -91,7 +91,7 @@ function LinkAccountForm({ initData, onLinked }: { initData: string; onLinked: (
 // ─── Дашборд ──────────────────────────────────────────────────────────────────
 
 function TgDashboard() {
-  const { data: ov, isLoading } = useQuery<OverviewStats>({ queryKey: ['overview'], queryFn: getOverview });
+  const { data: ov, isLoading } = useQuery<OverviewStats>({ queryKey: ['overview', 'week'], queryFn: () => getOverview('week') });
   const user = useAuthStore(s => s.user);
 
   if (isLoading) return <Loader />;
@@ -164,7 +164,7 @@ function TgDashboard() {
 // ─── Список менеджеров ────────────────────────────────────────────────────────
 
 function TgManagers({ onSelect }: { onSelect: (id: string) => void }) {
-  const { data: managers = [], isLoading } = useQuery<Manager[]>({ queryKey: ['managers'], queryFn: getManagers });
+  const { data: managers = [], isLoading } = useQuery<Manager[]>({ queryKey: ['managers', 'week'], queryFn: () => getManagers('week') });
   if (isLoading) return <Loader />;
 
   return (

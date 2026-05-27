@@ -24,3 +24,13 @@ class BaseCRMConnector(ABC):
     async def test_connection(self) -> bool:
         """Проверить подключение к CRM."""
         pass
+
+    @abstractmethod
+    async def get_notes(self, manager_id: str, since: datetime, limit: int = 50) -> List[Dict[str, Any]]:
+        """Получить заметки/переписку по менеджеру."""
+        pass
+
+    @abstractmethod
+    async def get_deals_with_fields(self, manager_id: str, since: datetime) -> List[Dict[str, Any]]:
+        """Получить сделки с кастомными полями для анализа заполненности."""
+        pass

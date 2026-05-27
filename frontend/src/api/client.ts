@@ -45,13 +45,18 @@ export const telegramUnlink = () =>
   api.delete('/auth/telegram/link');
 
 // Managers
-export const getManagers = () => api.get('/managers/').then((r) => r.data);
-export const getManager = (id: string) => api.get(`/managers/${id}`).then((r) => r.data);
+export const getManagers = (period = 'week') =>
+  api.get('/managers/', { params: { period } }).then((r) => r.data);
+export const getManager = (id: string, period = 'week') =>
+  api.get(`/managers/${id}`, { params: { period } }).then((r) => r.data);
 
 // Analytics
-export const getOverview = () => api.get('/analytics/overview').then((r) => r.data);
-export const getRevenueChart = () => api.get('/analytics/chart/revenue').then((r) => r.data);
-export const getRanking = () => api.get('/analytics/ranking').then((r) => r.data);
+export const getOverview = (period = 'week') =>
+  api.get('/analytics/overview', { params: { period } }).then((r) => r.data);
+export const getRevenueChart = (period = 'week') =>
+  api.get('/analytics/chart/revenue', { params: { period } }).then((r) => r.data);
+export const getRanking = (period = 'week') =>
+  api.get('/analytics/ranking', { params: { period } }).then((r) => r.data);
 
 // App settings
 export const getAppInfo = () => api.get('/settings/info').then((r) => r.data);

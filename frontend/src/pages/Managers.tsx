@@ -25,7 +25,7 @@ function PlanBar({ value }: { value: number }) {
 export default function Managers() {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
-  const { data: managers = [], isLoading } = useQuery({ queryKey: ['managers'], queryFn: getManagers });
+  const { data: managers = [], isLoading } = useQuery({ queryKey: ['managers', 'week'], queryFn: () => getManagers('week') });
 
   const filtered = managers.filter((m: Manager) =>
     m.full_name.toLowerCase().includes(search.toLowerCase())

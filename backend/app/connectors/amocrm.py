@@ -107,6 +107,62 @@ class AmoCRMConnector(BaseCRMConnector):
             })
         return result
 
+    async def get_notes(self, manager_id: str, since: datetime, limit: int = 50) -> List[Dict[str, Any]]:
+        since_ts = int(since.timestamp())
+        try:
+            notes = await self._paginate("/notes", "notes", {
+                "filter[entity_type]": "leads",
+                "filter[created_by]": manager_id,
+                "filter[created_at][from]": since_ts,
+            })
+        except Exception as e:
+            logger.warning("amoCRM notes fetch failed for %s: %s", manager_id, e)
+            return []
+
+        result = []
+        for n in notes[:limit]:
+            note_type = n.get("note_type")
+            is_call = note_type in [10, 13]
+            params = n.get("params") or {}
+            text = params.get("text") or params.get("talk_time") or ""
+            if is_call and not text:
+                text = f"Звонок {'входящий' if note_type == 13 else 'исходящий'}"
+            created_ts = n.get("created_at")
+            result.append({
+                "id": str(n["id"]),
+                "type": "call" if is_call else "note",
+                "text": str(text),
+                "created_at": datetime.fromtimestamp(created_ts).isoformat() if created_ts else None,
+            })
+        return [r for r in result if r["text"]]
+
+    async def get_deals_with_fields(self, manager_id: str, since: datetime) -> List[Dict[str, Any]]:
+        since_ts = int(since.timestamp())
+        leads = await self._paginate("/leads", "leads", {
+            "filter[responsible_user_id]": manager_id,
+            "filter[created_at][from]": since_ts,
+            "with": "custom_fields_values,contacts",
+        })
+        result = []
+        for lead in leads:
+            custom = lead.get("custom_fields_values") or []
+            contacts = (lead.get("_embedded") or {}).get("contacts") or []
+            result.append({
+                "id": str(lead["id"]),
+                "title": lead.get("name") or "—",
+                "amount": float(lead.get("price") or 0),
+                "has_contact": len(contacts) > 0,
+                "custom_fields": [
+                    {
+                        "field_id": str(f.get("field_id")),
+                        "name": f.get("field_name") or str(f.get("field_id")),
+                        "is_empty": not bool(f.get("values")),
+                    }
+                    for f in custom
+                ],
+            })
+        return result
+
     async def get_activities(self, manager_id: str, since: datetime) -> List[Dict[str, Any]]:
         since_ts = int(since.timestamp())
         try:
