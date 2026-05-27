@@ -65,5 +65,5 @@ asyncio.run(migrate())
 echo "🌱 Загрузка начальных данных (пропускается если уже есть)..."
 python -m app.utils.demo_data
 
-echo "🚀 Запуск сервера на порту \${PORT:-8000}..."
-exec uvicorn app.main:app --host 0.0.0.0 --port "\${PORT:-8000}"
+echo "🚀 Запуск сервера на порту ${PORT:-8000}..."
+exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
