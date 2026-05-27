@@ -112,6 +112,14 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     db.add(user)
     await db.commit()
     await db.refresh(user)
+
+    # Засеиваем демо-данные для нового тенанта (mock CRM режим)
+    try:
+        from app.utils.demo_data import seed_demo_for_tenant
+        await seed_demo_for_tenant(db, tenant.id)
+    except Exception:
+        pass  # Не блокируем регистрацию из-за ошибки сидирования
+
     return _make_token(user)
 
 

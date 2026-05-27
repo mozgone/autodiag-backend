@@ -3,6 +3,7 @@
 Запускается командой: python -m app.utils.seed_demo
 """
 import asyncio
+import calendar
 import uuid
 import random
 from datetime import datetime, timedelta
@@ -48,28 +49,49 @@ async def _seed_managers_for_tenant(db: AsyncSession, tenant_id: uuid.UUID, team
         deals_won = int(deals_created * rng.uniform(0.2, 0.5) * perf)
         revenue = deals_won * rng.uniform(50000, 150000) * perf
 
-        for week in range(4):
-            period_start = datetime.utcnow() - timedelta(weeks=4 - week)
-            snap = MetricSnapshot(
+        def _snap(period_type: str, period_start: datetime, divisor: float) -> MetricSnapshot:
+            return MetricSnapshot(
                 tenant_id=tenant_id,
                 manager_id=mgr_id,
-                period_type="weekly",
+                period_type=period_type,
                 period_start=period_start,
-                calls_count=int(calls * rng.uniform(0.8, 1.2)),
+                calls_count=max(1, int(calls * rng.uniform(0.8, 1.2) / divisor)),
                 calls_duration_avg=rng.uniform(120, 600),
                 calls_quality_avg=round(rng.uniform(5.0, 9.0) * perf, 1),
-                deals_created=int(deals_created * rng.uniform(0.7, 1.3) / 4),
-                deals_won=int(deals_won * rng.uniform(0.5, 1.5) / 4),
-                deals_lost=rng.randint(0, 3),
+                deals_created=max(0, int(deals_created * rng.uniform(0.7, 1.3) / divisor)),
+                deals_won=max(0, int(deals_won * rng.uniform(0.5, 1.5) / divisor)),
+                deals_lost=rng.randint(0, 2),
                 conversion_rate=round(rng.uniform(15, 45) * perf, 1),
                 avg_deal_size=round(rng.uniform(40000, 150000), -3),
-                revenue=round(revenue / 4 * rng.uniform(0.7, 1.3), -3),
+                revenue=round(revenue / divisor * rng.uniform(0.7, 1.3), -3),
                 crm_fill_rate=round(rng.uniform(55, 95) * min(perf, 1), 1),
-                overdue_tasks=max(0, int(rng.uniform(0, 8) * (1 - perf + 0.5))),
-                activities_count=calls + rng.randint(5, 20),
+                overdue_tasks=max(0, int(rng.uniform(0, 5) * (1 - perf + 0.5))),
+                activities_count=max(1, int((calls + rng.randint(5, 20)) / divisor)),
                 plan_completion_forecast=round(perf * 100 * rng.uniform(0.9, 1.1), 1),
             )
-            db.add(snap)
+
+        # Недельные снимки — последние 12 недель
+        for week in range(12):
+            period_start = datetime.utcnow() - timedelta(weeks=11 - week)
+            db.add(_snap("weekly", period_start, 4.0))
+
+        # Дневные снимки — последние 30 дней
+        for d in range(30):
+            period_start = datetime.utcnow() - timedelta(days=29 - d)
+            db.add(_snap("daily", period_start, 22.0))
+
+        # Месячные снимки — последние 12 месяцев
+        now = datetime.utcnow()
+        y, m_num = now.year, now.month
+        months = []
+        for _ in range(12):
+            months.insert(0, (y, m_num))
+            m_num -= 1
+            if m_num == 0:
+                m_num, y = 12, y - 1
+        for yr, mn in months:
+            period_start = datetime(yr, mn, 1)
+            db.add(_snap("monthly", period_start, 1.0))
 
         if perf >= 1.0:
             db.add(Recommendation(
