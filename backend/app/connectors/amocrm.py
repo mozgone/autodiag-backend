@@ -163,6 +163,93 @@ class AmoCRMConnector(BaseCRMConnector):
             })
         return result
 
+    async def get_call_recordings(
+        self, manager_id: str, since: datetime, limit: int = 15
+    ) -> List[Dict[str, Any]]:
+        since_ts = int(since.timestamp())
+        results = []
+        # note_type 10 = outgoing call, 13 = incoming call
+        for note_type in [10, 13]:
+            try:
+                notes = await self._paginate("/notes", "notes", {
+                    "filter[entity_type]": "leads",
+                    "filter[note_type]": note_type,
+                    "filter[created_by]": manager_id,
+                    "filter[created_at][from]": since_ts,
+                })
+                for n in notes:
+                    params = n.get("params") or {}
+                    recording_url = params.get("link") or params.get("record_url")
+                    duration = int(params.get("duration") or 0)
+                    created_ts = n.get("created_at")
+                    results.append({
+                        "id": str(n["id"]),
+                        "type": "call",
+                        "recording_url": recording_url,
+                        "text": None,  # will be transcribed by Agent 1
+                        "duration_seconds": duration,
+                        "created_at": (
+                            datetime.fromtimestamp(created_ts).isoformat()
+                            if created_ts else None
+                        ),
+                    })
+            except Exception as e:
+                logger.warning("amoCRM call notes fetch error type %s: %s", note_type, e)
+        # Sort by date desc, return up to limit
+        results.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+        return results[:limit]
+
+    async def get_chat_messages(
+        self, manager_id: str, since: datetime, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        since_ts = int(since.timestamp())
+        # note_type 4 = incoming chat, 12 = service message, 102/103 = WhatsApp
+        all_msgs = []
+        for note_type in [4, 12, 102, 103]:
+            try:
+                notes = await self._paginate("/notes", "notes", {
+                    "filter[entity_type]": "leads",
+                    "filter[note_type]": note_type,
+                    "filter[created_at][from]": since_ts,
+                })
+                all_msgs.extend(notes)
+            except Exception:
+                pass
+        # Group by entity_id (lead) into conversation threads
+        from collections import defaultdict
+        threads: dict = defaultdict(list)
+        for n in all_msgs:
+            entity_id = n.get("entity_id")
+            if not entity_id:
+                continue
+            params = n.get("params") or {}
+            text = (params.get("text") or params.get("message") or "").strip()
+            if text:
+                threads[entity_id].append({
+                    "text": text,
+                    "note_type": n.get("note_type"),
+                    "created_at": n.get("created_at"),
+                })
+        result = []
+        for lead_id, msgs in list(threads.items())[:limit]:
+            msgs.sort(key=lambda x: x.get("created_at") or 0)
+            lines = []
+            for m in msgs:
+                role = "Клиент" if m["note_type"] in [4, 102, 103] else "Менеджер"
+                lines.append(f"{role}: {m['text']}")
+            first_ts = msgs[0].get("created_at") if msgs else None
+            result.append({
+                "id": f"chat_{lead_id}",
+                "type": "chat",
+                "text": "\n".join(lines),
+                "messages_count": len(msgs),
+                "created_at": (
+                    datetime.fromtimestamp(first_ts).isoformat()
+                    if first_ts else None
+                ),
+            })
+        return result
+
     async def get_activities(self, manager_id: str, since: datetime) -> List[Dict[str, Any]]:
         since_ts = int(since.timestamp())
         try:

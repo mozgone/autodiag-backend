@@ -13,8 +13,10 @@ from sqlalchemy import select, delete
 
 from app.models.manager import Manager
 from app.models.metrics import MetricSnapshot, Recommendation
+from app.models.call_analysis import CallAnalysis
 from app.models.tenant import Tenant
 from app.connectors.base import BaseCRMConnector
+from app.services.analysis_pipeline import process_manager_communications
 
 logger = logging.getLogger(__name__)
 
@@ -210,6 +212,7 @@ async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
 
     # Полная очистка старых данных — удаляем снимки, рекомендации и всех менеджеров
     # (включая демо-менеджеров), чтобы не было дублей при подключении реальной CRM
+    await db.execute(delete(CallAnalysis).where(CallAnalysis.tenant_id == tenant.id))
     await db.execute(delete(MetricSnapshot).where(MetricSnapshot.tenant_id == tenant.id))
     await db.execute(delete(Recommendation).where(Recommendation.tenant_id == tenant.id))
     await db.execute(delete(Manager).where(Manager.tenant_id == tenant.id))
@@ -269,6 +272,22 @@ async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
         for rec in _make_recommendations(mgr, weekly_snaps, tenant.id):
             db.add(rec)
 
+        # ── Communication quality analysis (calls + chats) ────────────────────
+        try:
+            call_analyses = await process_manager_communications(
+                db, connector, mgr, tenant.id, since
+            )
+            for ca in call_analyses:
+                db.add(ca)
+
+            # Update calls_quality_avg in weekly snapshots with analyzed scores
+            if call_analyses and weekly_snaps:
+                avg_quality = sum(ca.overall_score for ca in call_analyses) / len(call_analyses)
+                for snap in weekly_snaps:
+                    snap.calls_quality_avg = round(avg_quality, 1)
+        except Exception as e:
+            logger.warning("Communication analysis не выполнен для %s: %s", mgr.full_name, e)
+
         # AI-анализ чатов и полей CRM
         try:
             notes_data = await connector.get_notes(mgr.crm_id, since, limit=30)
@@ -322,6 +341,25 @@ async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
                     ))
         except Exception as e:
             logger.warning("AI-анализ не выполнен для %s: %s", mgr.full_name, e)
+
+        # ── Анализ звонков и чатов (3-агентный пайплайн) ──────────────────────
+        try:
+            call_analyses = await process_manager_communications(
+                db, connector, mgr, tenant.id, since
+            )
+            for ca in call_analyses:
+                db.add(ca)
+            # Обновляем качество звонков на основе реального анализа
+            if call_analyses and weekly_snaps:
+                call_items = [ca for ca in call_analyses if ca.item_type == "call"]
+                if call_items:
+                    avg_quality = round(
+                        sum(ca.overall_score for ca in call_items) / len(call_items), 1
+                    )
+                    for snap in weekly_snaps:
+                        snap.calls_quality_avg = avg_quality
+        except Exception as e:
+            logger.warning("Анализ коммуникаций не выполнен для %s: %s", mgr.full_name, e)
 
     tenant.last_sync_at = datetime.utcnow()
     tenant.sync_status = "ok"

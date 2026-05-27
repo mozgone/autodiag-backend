@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -6,6 +7,7 @@ from app.api.v1.auth import get_current_user
 from app.models.user import User
 from app.models.manager import Manager
 from app.models.metrics import MetricSnapshot, Recommendation
+from app.models.call_analysis import CallAnalysis
 
 router = APIRouter()
 
@@ -150,3 +152,62 @@ async def get_manager(
             for r in recs
         ],
     }
+
+
+@router.get("/{manager_id}/calls")
+async def get_manager_calls(
+    manager_id: str,
+    limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return call/chat analysis records for a manager, ordered by item_date desc."""
+    # Verify manager belongs to the current tenant
+    res = await db.execute(
+        select(Manager).where(
+            Manager.id == manager_id,
+            Manager.tenant_id == current_user.tenant_id,
+        )
+    )
+    m = res.scalar_one_or_none()
+    if not m:
+        raise HTTPException(status_code=404, detail="Manager not found")
+
+    calls_res = await db.execute(
+        select(CallAnalysis)
+        .where(CallAnalysis.manager_id == m.id)
+        .order_by(CallAnalysis.item_date.desc().nullslast(), CallAnalysis.created_at.desc())
+        .limit(limit)
+    )
+    calls = calls_res.scalars().all()
+
+    def _parse_json_list(raw: str | None) -> list:
+        if not raw:
+            return []
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, list) else []
+        except Exception:
+            return []
+
+    return [
+        {
+            "id":                  str(ca.id),
+            "item_type":           ca.item_type,
+            "item_date":           ca.item_date.isoformat() if ca.item_date else None,
+            "duration_seconds":    ca.duration_seconds,
+            "overall_score":       ca.overall_score,
+            "score_greeting":      ca.score_greeting,
+            "score_needs":         ca.score_needs,
+            "score_presentation":  ca.score_presentation,
+            "score_objections":    ca.score_objections,
+            "score_closing":       ca.score_closing,
+            "score_next_step":     ca.score_next_step,
+            "verdict":             ca.verdict,
+            "summary":             ca.summary,
+            "strengths":           _parse_json_list(ca.strengths),
+            "improvements":        _parse_json_list(ca.improvements),
+            "transcript":          (ca.transcript or "")[:500] if ca.transcript else None,
+        }
+        for ca in calls
+    ]

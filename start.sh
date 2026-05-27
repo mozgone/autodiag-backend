@@ -17,7 +17,7 @@ import psycopg2
 conn = psycopg2.connect(db_url, connect_timeout=15)
 conn.autocommit = True
 cur = conn.cursor()
-tables = ['recommendations','metric_snapshots','activities','deals','managers','teams','users','tenants']
+tables = ['call_analyses','recommendations','metric_snapshots','activities','deals','managers','teams','users','tenants']
 for t in tables:
     cur.execute(f'DROP TABLE IF EXISTS {t} CASCADE')
     print(f'   Удалена: {t}', flush=True)

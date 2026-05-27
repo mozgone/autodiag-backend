@@ -73,6 +73,25 @@ export interface RevenueChartPoint {
   conversion: number;
 }
 
+export interface CallAnalysis {
+  id: string;
+  item_type: 'call' | 'chat';
+  item_date: string | null;
+  duration_seconds: number;
+  overall_score: number;
+  score_greeting: number;
+  score_needs: number;
+  score_presentation: number;
+  score_objections: number;
+  score_closing: number;
+  score_next_step: number;
+  verdict: 'strong' | 'average' | 'weak';
+  summary: string | null;
+  strengths: string[];
+  improvements: string[];
+  transcript: string | null;
+}
+
 export interface RankingItem {
   rank: number;
   manager_id: string;

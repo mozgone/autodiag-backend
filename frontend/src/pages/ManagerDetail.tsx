@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Phone, TrendingUp, Database, CheckCircle, AlertTriangle, Lightbulb, Target, MessageSquare, Clock, Star, Activity } from 'lucide-react';
+import { ArrowLeft, Phone, TrendingUp, Database, CheckCircle, AlertTriangle, Lightbulb, Target, MessageSquare, Clock, Star, Activity, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { getManager } from '../api/client';
-import { ManagerDetail as MgrDetail, Recommendation } from '../types';
+import { getManager, getManagerCalls } from '../api/client';
+import { ManagerDetail as MgrDetail, Recommendation, CallAnalysis } from '../types';
 import ManagerRadar from '../components/charts/ManagerRadar';
 
 type Period = 'day' | 'week' | 'month' | 'year';
@@ -32,9 +32,17 @@ export default function ManagerDetail() {
   const navigate = useNavigate();
   const [period, setPeriod] = useState<Period>('week');
 
+  const [expandedCall, setExpandedCall] = useState<string | null>(null);
+
   const { data: manager, isLoading } = useQuery<MgrDetail>({
     queryKey: ['manager', id, period],
     queryFn: () => getManager(id!, period),
+    enabled: !!id,
+  });
+
+  const { data: callAnalyses = [] } = useQuery<CallAnalysis[]>({
+    queryKey: ['manager-calls', id],
+    queryFn: () => getManagerCalls(id!),
     enabled: !!id,
   });
 
@@ -209,6 +217,146 @@ export default function ManagerDetail() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Звонки и чаты — детальный анализ */}
+      {callAnalyses.length > 0 && (
+        <div style={{ background: '#1a1a2e', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.07)', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <div style={{ background: 'rgba(167,139,250,0.12)', borderRadius: 10, padding: 8 }}>
+              <Phone size={18} color="#a78bfa" />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>
+              Анализ звонков и чатов ({callAnalyses.length})
+            </h3>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {callAnalyses.map((ca) => {
+              const isExpanded = expandedCall === ca.id;
+              const verdictColor = ca.verdict === 'strong' ? '#2dd4bf' : ca.verdict === 'average' ? '#fb923c' : '#f472b6';
+              const verdictBg = ca.verdict === 'strong' ? 'rgba(45,212,191,0.08)' : ca.verdict === 'average' ? 'rgba(251,146,60,0.08)' : 'rgba(244,114,182,0.08)';
+              const verdictLabel = ca.verdict === 'strong' ? 'Сильный' : ca.verdict === 'average' ? 'Средний' : 'Слабый';
+              const scoreColor = (s: number) => s >= 7 ? '#2dd4bf' : s >= 5 ? '#fb923c' : '#f472b6';
+
+              const scores = [
+                { label: 'Приветствие', value: ca.score_greeting },
+                { label: 'Потребности', value: ca.score_needs },
+                { label: 'Презентация', value: ca.score_presentation },
+                { label: 'Возражения', value: ca.score_objections },
+                { label: 'Закрытие', value: ca.score_closing },
+                { label: 'След. шаг', value: ca.score_next_step },
+              ];
+
+              return (
+                <div key={ca.id} style={{ border: `1px solid ${verdictColor}30`, borderRadius: 12, overflow: 'hidden' }}>
+                  {/* Header row */}
+                  <div
+                    onClick={() => setExpandedCall(isExpanded ? null : ca.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '14px 16px', cursor: 'pointer', background: verdictBg,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: 13 }}>
+                        {ca.item_type === 'call' ? <Phone size={14} color="#a78bfa" /> : <MessageSquare size={14} color="#60a5fa" />}
+                        <span style={{ color: ca.item_type === 'call' ? '#a78bfa' : '#60a5fa', fontWeight: 600 }}>
+                          {ca.item_type === 'call' ? 'Звонок' : 'Чат'}
+                        </span>
+                      </div>
+                      {ca.item_date && (
+                        <span style={{ fontSize: 12, color: '#64748b' }}>
+                          {new Date(ca.item_date).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })}
+                        </span>
+                      )}
+                      {ca.duration_seconds > 0 && (
+                        <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Clock size={12} /> {Math.floor(ca.duration_seconds / 60)}:{String(ca.duration_seconds % 60).padStart(2, '0')}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Star size={14} color={verdictColor} />
+                        <span style={{ fontSize: 18, fontWeight: 700, color: verdictColor }}>{ca.overall_score.toFixed(1)}</span>
+                        <span style={{ fontSize: 11, color: '#64748b' }}>/10</span>
+                      </div>
+                      <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 99, fontWeight: 600, background: `${verdictColor}18`, color: verdictColor }}>
+                        {verdictLabel}
+                      </span>
+                      {isExpanded ? <ChevronUp size={16} color="#64748b" /> : <ChevronDown size={16} color="#64748b" />}
+                    </div>
+                  </div>
+
+                  {/* Expanded body */}
+                  {isExpanded && (
+                    <div style={{ padding: '16px 16px 20px', background: 'rgba(255,255,255,0.02)' }}>
+                      {/* 6 score bars */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px', marginBottom: 16 }}>
+                        {scores.map(({ label, value }) => (
+                          <div key={label}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                              <span style={{ color: '#94a3b8' }}>{label}</span>
+                              <span style={{ fontWeight: 600, color: scoreColor(value) }}>{value.toFixed(1)}</span>
+                            </div>
+                            <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
+                              <div style={{
+                                height: '100%', width: `${Math.min(value / 10 * 100, 100)}%`,
+                                background: scoreColor(value), borderRadius: 3,
+                              }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Summary */}
+                      {ca.summary && (
+                        <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, marginBottom: 14, padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, borderLeft: '3px solid #475569' }}>
+                          {ca.summary}
+                        </div>
+                      )}
+
+                      {/* Strengths + Improvements */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        {ca.strengths.length > 0 && (
+                          <div style={{ padding: 12, background: 'rgba(45,212,191,0.06)', borderRadius: 10, border: '1px solid rgba(45,212,191,0.15)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                              <ThumbsUp size={13} color="#2dd4bf" />
+                              <span style={{ fontSize: 12, fontWeight: 600, color: '#2dd4bf' }}>Сильные стороны</span>
+                            </div>
+                            {ca.strengths.map((s, i) => (
+                              <div key={i} style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, paddingLeft: 4 }}>• {s}</div>
+                            ))}
+                          </div>
+                        )}
+                        {ca.improvements.length > 0 && (
+                          <div style={{ padding: 12, background: 'rgba(244,114,182,0.06)', borderRadius: 10, border: '1px solid rgba(244,114,182,0.15)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                              <ThumbsDown size={13} color="#f472b6" />
+                              <span style={{ fontSize: 12, fontWeight: 600, color: '#f472b6' }}>Зоны роста</span>
+                            </div>
+                            {ca.improvements.map((s, i) => (
+                              <div key={i} style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4, paddingLeft: 4 }}>• {s}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Transcript preview */}
+                      {ca.transcript && (
+                        <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, fontSize: 12, color: '#64748b', fontStyle: 'italic', lineHeight: 1.5 }}>
+                          <span style={{ color: '#475569', fontWeight: 600, fontStyle: 'normal' }}>Фрагмент: </span>
+                          {ca.transcript.length > 300 ? ca.transcript.slice(0, 300) + '...' : ca.transcript}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

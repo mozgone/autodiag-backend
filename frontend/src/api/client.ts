@@ -49,6 +49,8 @@ export const getManagers = (period = 'week') =>
   api.get('/managers/', { params: { period } }).then((r) => r.data);
 export const getManager = (id: string, period = 'week') =>
   api.get(`/managers/${id}`, { params: { period } }).then((r) => r.data);
+export const getManagerCalls = (id: string, limit = 20) =>
+  api.get(`/managers/${id}/calls`, { params: { limit } }).then((r) => r.data);
 
 // Analytics
 export const getOverview = (period = 'week') =>

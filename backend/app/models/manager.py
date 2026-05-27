@@ -38,3 +38,4 @@ class Manager(Base):
     activities = relationship("Activity", back_populates="manager", cascade="all, delete-orphan")
     metric_snapshots = relationship("MetricSnapshot", back_populates="manager", cascade="all, delete-orphan")
     recommendations = relationship("Recommendation", back_populates="manager", cascade="all, delete-orphan")
+    call_analyses = relationship("CallAnalysis", back_populates="manager", cascade="all, delete-orphan")
