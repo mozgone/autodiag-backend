@@ -256,8 +256,9 @@ async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
 
         # ── Недельные снимки: последние 12 недель ──────────────────────────────
         for w in range(12):
-            p_start = now - timedelta(weeks=11 - w)
-            p_end = p_start + timedelta(weeks=1)
+            # w=11 (last): p_end=now, p_start=now-1w — данные текущей недели
+            p_end = now - timedelta(weeks=11 - w)
+            p_start = p_end - timedelta(weeks=1)
             snap = _compute_snapshot(deals, activities, mgr, p_start, p_end, tenant.id, "weekly")
             db.add(snap)
             weekly_snaps.append(snap)

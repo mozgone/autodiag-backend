@@ -72,7 +72,8 @@ async def _seed_managers_for_tenant(db: AsyncSession, tenant_id: uuid.UUID, team
 
         # Недельные снимки — последние 12 недель
         for week in range(12):
-            period_start = datetime.utcnow() - timedelta(weeks=11 - week)
+            # week=11 (последний): period_start = now - 1 нед., соответствует текущей неделе
+            period_start = datetime.utcnow() - timedelta(weeks=12 - week)
             db.add(_snap("weekly", period_start, 4.0))
 
         # Дневные снимки — последние 30 дней
