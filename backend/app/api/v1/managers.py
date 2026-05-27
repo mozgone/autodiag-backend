@@ -24,15 +24,17 @@ def _build_stats(snapshots: list) -> dict:
         return {}
     latest = snapshots[-1]
     return {
-        "calls_count":       latest.calls_count,
-        "calls_quality_avg": latest.calls_quality_avg,
-        "deals_created":     latest.deals_created,
-        "deals_won":         latest.deals_won,
-        "conversion_rate":   latest.conversion_rate,
-        "revenue":           latest.revenue,
-        "plan_completion":   latest.plan_completion_forecast,
-        "crm_fill_rate":     latest.crm_fill_rate,
-        "overdue_tasks":     latest.overdue_tasks,
+        "calls_count":        latest.calls_count,
+        "calls_quality_avg":  latest.calls_quality_avg,
+        "calls_duration_avg": latest.calls_duration_avg,
+        "activities_count":   latest.activities_count,
+        "deals_created":      latest.deals_created,
+        "deals_won":          latest.deals_won,
+        "conversion_rate":    latest.conversion_rate,
+        "revenue":            latest.revenue,
+        "plan_completion":    latest.plan_completion_forecast,
+        "crm_fill_rate":      latest.crm_fill_rate,
+        "overdue_tasks":      latest.overdue_tasks,
         "trend": (
             "up" if len(snapshots) > 1 and latest.revenue > snapshots[-2].revenue
             else "stable"

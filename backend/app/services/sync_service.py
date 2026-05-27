@@ -92,11 +92,18 @@ def _compute_snapshot(
     call_durs = [int(c.get("duration_seconds") or 0) for c in calls]
     calls_dur_avg = (sum(call_durs) / len(call_durs)) if call_durs else 0.0
 
+    # Качество звонков: среднее из quality_score активностей
+    quality_scores = [float(a["quality_score"]) for a in period_acts if a.get("quality_score")]
+    calls_quality = round(sum(quality_scores) / len(quality_scores), 1) if quality_scores else 0.0
+
+    # Заполненность CRM: сделки с суммой И контактом
     with_price = [d for d in period_deals if float(d.get("amount") or 0) > 0]
-    crm_fill = (len(with_price) / created * 100) if created > 0 else 0.0
+    with_contact = [d for d in period_deals if d.get("has_contact")]
+    filled_count = len([d for d in period_deals
+                        if float(d.get("amount") or 0) > 0 or d.get("has_contact")])
+    crm_fill = (filled_count / created * 100) if created > 0 else 0.0
 
     monthly_plan = max(float(manager.monthly_plan or 0), 1.0)
-    # Нормализуем выручку периода к месячной
     multipliers = {"daily": 30.0, "weekly": 4.33, "monthly": 1.0}
     monthly_est = revenue * multipliers.get(period_type, 4.33)
     plan_pct = round(monthly_est / monthly_plan * 100, 1)
@@ -108,7 +115,7 @@ def _compute_snapshot(
         period_start=period_start,
         calls_count=len(calls) if calls else len(period_acts),
         calls_duration_avg=round(calls_dur_avg, 1),
-        calls_quality_avg=0.0,
+        calls_quality_avg=calls_quality,
         deals_created=created,
         deals_won=len(won),
         deals_lost=len(lost),
@@ -201,36 +208,26 @@ async def sync_tenant(db: AsyncSession, tenant: Tenant) -> dict:
     # Берём данные за последний год (покрывает все периоды)
     since = datetime.utcnow() - timedelta(days=365)
 
-    # Upsert менеджеров по crm_id
-    db_managers: List[Manager] = []
-    for cm in crm_managers:
-        res = await db.execute(
-            select(Manager).where(
-                Manager.tenant_id == tenant.id,
-                Manager.crm_id == str(cm["id"]),
-            )
-        )
-        mgr = res.scalar_one_or_none()
-        if mgr is None:
-            mgr = Manager(
-                tenant_id=tenant.id,
-                crm_id=str(cm["id"]),
-                full_name=cm["name"],
-                email=cm.get("email") or None,
-                monthly_plan=float(cm.get("plan") or 0),
-            )
-            db.add(mgr)
-        else:
-            mgr.full_name = cm["name"]
-            if cm.get("email"):
-                mgr.email = cm["email"]
-            mgr.is_active = True
-        await db.flush()
-        db_managers.append(mgr)
-
-    # Очищаем старые снимки и рекомендации
+    # Полная очистка старых данных — удаляем снимки, рекомендации и всех менеджеров
+    # (включая демо-менеджеров), чтобы не было дублей при подключении реальной CRM
     await db.execute(delete(MetricSnapshot).where(MetricSnapshot.tenant_id == tenant.id))
     await db.execute(delete(Recommendation).where(Recommendation.tenant_id == tenant.id))
+    await db.execute(delete(Manager).where(Manager.tenant_id == tenant.id))
+    await db.flush()
+
+    # Создаём менеджеров из CRM
+    db_managers: List[Manager] = []
+    for cm in crm_managers:
+        mgr = Manager(
+            tenant_id=tenant.id,
+            crm_id=str(cm["id"]),
+            full_name=cm["name"],
+            email=cm.get("email") or None,
+            monthly_plan=float(cm.get("plan") or 0),
+        )
+        db.add(mgr)
+        await db.flush()
+        db_managers.append(mgr)
 
     total_deals = 0
     now = datetime.utcnow()

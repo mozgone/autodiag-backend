@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Phone, TrendingUp, Database, CheckCircle, AlertTriangle, Lightbulb, Target } from 'lucide-react';
+import { ArrowLeft, Phone, TrendingUp, Database, CheckCircle, AlertTriangle, Lightbulb, Target, MessageSquare, Clock, Star, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { getManager } from '../api/client';
 import { ManagerDetail as MgrDetail, Recommendation } from '../types';
@@ -130,6 +130,87 @@ export default function ManagerDetail() {
           {stats && <ManagerRadar stats={stats} />}
         </div>
       </div>
+
+      {/* Анализ коммуникаций */}
+      {stats && (
+        <div style={{ background: '#1a1a2e', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.07)', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <div style={{ background: 'rgba(45,212,191,0.12)', borderRadius: 10, padding: 8 }}>
+              <MessageSquare size={18} color="#2dd4bf" />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>Анализ коммуникаций</h3>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+            {[
+              {
+                label: 'Качество звонков',
+                value: stats.calls_quality_avg > 0 ? `${stats.calls_quality_avg.toFixed(1)}/10` : '—',
+                icon: Star,
+                color: stats.calls_quality_avg >= 7 ? '#2dd4bf' : stats.calls_quality_avg >= 5 ? '#fb923c' : stats.calls_quality_avg > 0 ? '#f472b6' : '#64748b',
+                sub: stats.calls_quality_avg > 0 ? (stats.calls_quality_avg >= 7 ? 'Высокое' : stats.calls_quality_avg >= 5 ? 'Среднее' : 'Низкое') : 'Нет данных',
+              },
+              {
+                label: 'Ср. длительность',
+                value: stats.calls_duration_avg > 0
+                  ? `${Math.floor(stats.calls_duration_avg / 60)}м ${Math.round(stats.calls_duration_avg % 60)}с`
+                  : '—',
+                icon: Clock,
+                color: '#a78bfa',
+                sub: 'на звонок',
+              },
+              {
+                label: 'Активностей',
+                value: stats.activities_count,
+                icon: Activity,
+                color: '#60a5fa',
+                sub: 'за период',
+              },
+              {
+                label: 'Заполн. CRM',
+                value: `${stats.crm_fill_rate.toFixed(0)}%`,
+                icon: Database,
+                color: stats.crm_fill_rate >= 80 ? '#2dd4bf' : stats.crm_fill_rate >= 50 ? '#fb923c' : '#f472b6',
+                sub: stats.crm_fill_rate >= 80 ? 'Хорошо' : stats.crm_fill_rate >= 50 ? 'Требует внимания' : 'Плохо',
+              },
+            ].map(({ label, value, icon: Icon, color, sub }) => (
+              <div key={label} style={{ padding: 14, background: 'rgba(255,255,255,0.04)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Icon size={15} color={color} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>{label}</span>
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9', marginBottom: 2 }}>{value}</div>
+                <div style={{ fontSize: 11, color }}>
+                  {sub}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Визуальная шкала качества */}
+          {stats.calls_quality_avg > 0 && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 6 }}>
+                <span>Качество коммуникаций (ИИ-оценка)</span>
+                <span style={{ fontWeight: 600, color: stats.calls_quality_avg >= 7 ? '#2dd4bf' : stats.calls_quality_avg >= 5 ? '#fb923c' : '#f472b6' }}>
+                  {(stats.calls_quality_avg / 10 * 100).toFixed(0)}%
+                </span>
+              </div>
+              <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }}>
+                <div style={{
+                  height: '100%',
+                  width: `${Math.min(stats.calls_quality_avg / 10 * 100, 100)}%`,
+                  background: stats.calls_quality_avg >= 7 ? 'linear-gradient(90deg, #2dd4bf, #60a5fa)' : stats.calls_quality_avg >= 5 ? 'linear-gradient(90deg, #fb923c, #fbbf24)' : 'linear-gradient(90deg, #f472b6, #fb923c)',
+                  borderRadius: 4,
+                  transition: 'width 0.5s',
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#475569', marginTop: 4 }}>
+                <span>Плохо</span><span>Нормально</span><span>Отлично</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Динамика */}
       {manager.weekly_history.length > 0 && (

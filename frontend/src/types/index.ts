@@ -10,6 +10,8 @@ export interface User {
 export interface ManagerStats {
   calls_count: number;
   calls_quality_avg: number;
+  calls_duration_avg: number;
+  activities_count: number;
   deals_created: number;
   deals_won: number;
   conversion_rate: number;
