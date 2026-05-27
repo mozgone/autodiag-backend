@@ -9,13 +9,13 @@ const fmt = (n: number) => n >= 1000000 ? `${(n/1000000).toFixed(1)}М` : n >= 1
 
 function PlanBar({ value }: { value: number }) {
   const pct = Math.min(value, 100);
-  const color = pct >= 100 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444';
+  const color = pct >= 100 ? '#2dd4bf' : pct >= 70 ? '#fb923c' : '#f472b6';
   return (
     <div style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4, color: '#64748b' }}>
         <span>Выполнение плана</span><span style={{ color, fontWeight: 600 }}>{pct.toFixed(0)}%</span>
       </div>
-      <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3 }}>
+      <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
         <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3, transition: 'width 0.5s' }} />
       </div>
     </div>
@@ -37,15 +37,19 @@ export default function Managers() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1e293b' }}>Менеджеры</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#f1f5f9' }}>Менеджеры</h1>
           <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>{managers.length} сотрудников в системе</p>
         </div>
         <div style={{ position: 'relative' }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
           <input
             value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Поиск менеджера..."
-            style={{ paddingLeft: 36, paddingRight: 14, paddingTop: 10, paddingBottom: 10, border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, outline: 'none', width: 240 }}
+            style={{
+              paddingLeft: 36, paddingRight: 14, paddingTop: 10, paddingBottom: 10,
+              border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 14,
+              outline: 'none', width: 240, background: '#1a1a2e', color: '#f1f5f9',
+            }}
           />
         </div>
       </div>
@@ -54,30 +58,32 @@ export default function Managers() {
         {filtered.map((m: Manager) => {
           const stats = m.stats;
           const TrendIcon = stats?.trend === 'up' ? TrendingUp : stats?.trend === 'down' ? TrendingDown : Minus;
-          const trendColor = stats?.trend === 'up' ? '#10b981' : stats?.trend === 'down' ? '#ef4444' : '#94a3b8';
+          const trendColor = stats?.trend === 'up' ? '#2dd4bf' : stats?.trend === 'down' ? '#f472b6' : '#64748b';
           return (
             <div
               key={m.id}
               onClick={() => navigate(`/managers/${m.id}`)}
               style={{
-                background: '#fff', borderRadius: 16, padding: 24, border: '1px solid #e2e8f0',
-                cursor: 'pointer', transition: 'all 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                background: '#1a1a2e', borderRadius: 16, padding: 24,
+                border: '1px solid rgba(255,255,255,0.07)',
+                cursor: 'pointer', transition: 'all 0.15s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 25px rgba(99,102,241,0.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.07)'; e.currentTarget.style.transform = 'none'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.border = '1px solid rgba(45,212,191,0.3)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.07)'; e.currentTarget.style.transform = 'none'; }}
             >
               {/* Заголовок */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: '50%', background: '#6366f1',
+                    width: 44, height: 44, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: '#fff', fontWeight: 700, fontSize: 16,
                   }}>
                     {m.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 600, color: '#1e293b', fontSize: 15 }}>{m.full_name}</div>
+                    <div style={{ fontWeight: 600, color: '#f1f5f9', fontSize: 15 }}>{m.full_name}</div>
                     <div style={{ fontSize: 12, color: '#64748b' }}>{m.email || 'Менеджер'}</div>
                   </div>
                 </div>
@@ -93,9 +99,9 @@ export default function Managers() {
                       { label: 'Выручка', value: `${fmt(stats.revenue)} ₽` },
                       { label: 'Конверсия', value: `${stats.conversion_rate?.toFixed(0)}%` },
                     ].map(({ label, value }) => (
-                      <div key={label} style={{ textAlign: 'center', padding: '10px 8px', background: '#f8fafc', borderRadius: 10 }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{value}</div>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>{label}</div>
+                      <div key={label} style={{ textAlign: 'center', padding: '10px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 10 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9' }}>{value}</div>
+                        <div style={{ fontSize: 11, color: '#64748b' }}>{label}</div>
                       </div>
                     ))}
                   </div>

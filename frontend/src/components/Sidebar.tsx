@@ -13,20 +13,26 @@ const navItems = [
 const styles: Record<string, React.CSSProperties> = {
   sidebar: {
     position: 'fixed', top: 0, left: 0, height: '100vh',
-    width: 'var(--sidebar-width)', background: '#1e1b4b',
+    width: 'var(--sidebar-width)', background: '#13132a',
     display: 'flex', flexDirection: 'column', zIndex: 100,
+    borderRight: '1px solid rgba(255,255,255,0.06)',
   },
   logo: {
     padding: '24px 20px', display: 'flex', alignItems: 'center', gap: 10,
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
+    borderBottom: '1px solid rgba(255,255,255,0.07)',
   },
-  logoText: { color: '#fff', fontSize: 20, fontWeight: 700, letterSpacing: '-0.5px' },
+  logoIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    background: 'linear-gradient(135deg, #2dd4bf 0%, #a78bfa 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+  logoText: { color: '#f1f5f9', fontSize: 20, fontWeight: 700, letterSpacing: '-0.5px' },
   nav: { flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 },
-  bottom: { padding: '16px 12px', borderTop: '1px solid rgba(255,255,255,0.1)' },
+  bottom: { padding: '16px 12px', borderTop: '1px solid rgba(255,255,255,0.07)' },
   logoutBtn: {
     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
     padding: '10px 12px', background: 'none', border: 'none',
-    color: 'rgba(255,255,255,0.6)', fontSize: 14, borderRadius: 8,
+    color: '#64748b', fontSize: 14, borderRadius: 8,
     transition: 'all 0.15s',
   },
 };
@@ -40,7 +46,9 @@ export default function Sidebar() {
   return (
     <aside style={styles.sidebar}>
       <div style={styles.logo}>
-        <TrendingUp size={24} color="#818cf8" />
+        <div style={styles.logoIcon}>
+          <TrendingUp size={18} color="#fff" />
+        </div>
         <span style={styles.logoText}>Sellex</span>
       </div>
       <nav style={styles.nav}>
@@ -50,8 +58,8 @@ export default function Sidebar() {
             style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '10px 12px', borderRadius: 8, fontSize: 14, fontWeight: 500,
-              color: isActive ? '#fff' : 'rgba(255,255,255,0.6)',
-              background: isActive ? 'rgba(99,102,241,0.3)' : 'transparent',
+              color: isActive ? '#f1f5f9' : '#64748b',
+              background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
               transition: 'all 0.15s',
               textDecoration: 'none',
             })}

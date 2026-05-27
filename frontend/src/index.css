@@ -1,16 +1,18 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f8fafc;
-  color: #1e293b;
+  background: #0f0f1a;
+  color: #f1f5f9;
   -webkit-font-smoothing: antialiased;
 }
 :root {
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  --primary: #2dd4bf;
+  --primary-dark: #14b8a6;
+  --accent-purple: #a78bfa;
+  --accent-pink: #f472b6;
+  --success: #2dd4bf;
+  --warning: #fb923c;
+  --danger: #f472b6;
   --sidebar-width: 240px;
 }
 a { color: inherit; text-decoration: none; }
@@ -18,9 +20,4 @@ button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  body { background: #0f172a; color: #e2e8f0; }
-}
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
