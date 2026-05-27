@@ -32,8 +32,10 @@ export default function Settings() {
   const connectMutation = useMutation({
     mutationFn: () => connectCRM({ crm_type: crmType, subdomain, access_token: token }),
     onSuccess: () => {
-      toast.success('CRM успешно подключена!');
+      toast.success('CRM успешно подключена! Загружаем демо-данные...');
       queryClient.invalidateQueries({ queryKey: ['crm-status'] });
+      queryClient.invalidateQueries({ queryKey: ['overview'] });
+      queryClient.invalidateQueries({ queryKey: ['managers'] });
     },
     onError: () => toast.error('Ошибка подключения CRM'),
   });

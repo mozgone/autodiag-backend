@@ -29,6 +29,10 @@ async def connect_crm(
     if req.crm_type == "mock":
         tenant.crm_type = "mock"
         tenant.crm_config = None
+        await db.commit()
+        from app.utils.demo_data import seed_demo_for_tenant
+        await seed_demo_for_tenant(db, tenant.id)
+        return {"status": "connected", "crm_type": req.crm_type}
     elif req.crm_type == "amocrm":
         import json
         if not req.subdomain or not req.access_token:

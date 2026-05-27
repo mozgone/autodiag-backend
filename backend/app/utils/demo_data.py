@@ -25,12 +25,99 @@ DEMO_MANAGERS = [
 
 STAGES = [("Новый лид", 0), ("Квалификация", 1), ("Презентация", 2), ("КП отправлено", 3), ("Переговоры", 4), ("Договор", 5)]
 
+async def _seed_managers_for_tenant(db: AsyncSession, tenant_id: uuid.UUID, team_id: uuid.UUID) -> None:
+    """Засеивает 5 демо-менеджеров с метриками и рекомендациями для указанного тенанта."""
+    rng = random.Random(tenant_id.int % (2**32))
+    for idx, m_data in enumerate(DEMO_MANAGERS):
+        mgr_id = uuid.uuid4()
+        mgr = Manager(
+            id=mgr_id,
+            tenant_id=tenant_id,
+            team_id=team_id,
+            full_name=m_data["name"],
+            email=f"{m_data['email'].split('@')[0]}_{str(tenant_id)[:6]}@sellex.demo",
+            monthly_plan=m_data["plan"],
+            crm_id=f"crm_{idx+1}",
+        )
+        db.add(mgr)
+        await db.flush()
+
+        perf = m_data["perf"]
+        calls = int(rng.uniform(20, 60) * perf)
+        deals_created = rng.randint(10, 20)
+        deals_won = int(deals_created * rng.uniform(0.2, 0.5) * perf)
+        revenue = deals_won * rng.uniform(50000, 150000) * perf
+
+        for week in range(4):
+            period_start = datetime.utcnow() - timedelta(weeks=4 - week)
+            snap = MetricSnapshot(
+                tenant_id=tenant_id,
+                manager_id=mgr_id,
+                period_type="weekly",
+                period_start=period_start,
+                calls_count=int(calls * rng.uniform(0.8, 1.2)),
+                calls_duration_avg=rng.uniform(120, 600),
+                calls_quality_avg=round(rng.uniform(5.0, 9.0) * perf, 1),
+                deals_created=int(deals_created * rng.uniform(0.7, 1.3) / 4),
+                deals_won=int(deals_won * rng.uniform(0.5, 1.5) / 4),
+                deals_lost=rng.randint(0, 3),
+                conversion_rate=round(rng.uniform(15, 45) * perf, 1),
+                avg_deal_size=round(rng.uniform(40000, 150000), -3),
+                revenue=round(revenue / 4 * rng.uniform(0.7, 1.3), -3),
+                crm_fill_rate=round(rng.uniform(55, 95) * min(perf, 1), 1),
+                overdue_tasks=max(0, int(rng.uniform(0, 8) * (1 - perf + 0.5))),
+                activities_count=calls + rng.randint(5, 20),
+                plan_completion_forecast=round(perf * 100 * rng.uniform(0.9, 1.1), 1),
+            )
+            db.add(snap)
+
+        if perf >= 1.0:
+            db.add(Recommendation(
+                tenant_id=tenant_id, manager_id=mgr_id,
+                rec_type="strength", priority=1,
+                title="Перевыполнение плана",
+                content=f"{m_data['name']} стабильно перевыполняет план. Рекомендуем рассмотреть наставничество над менее опытными коллегами.",
+            ))
+        elif perf < 0.75:
+            db.add(Recommendation(
+                tenant_id=tenant_id, manager_id=mgr_id,
+                rec_type="alert", priority=3,
+                title="Риск невыполнения плана",
+                content=f"Прогноз выполнения плана: {int(perf*100)}%. Необходимо срочно увеличить количество контактов и проработать застрявшие сделки.",
+            ))
+        else:
+            db.add(Recommendation(
+                tenant_id=tenant_id, manager_id=mgr_id,
+                rec_type="growth", priority=2,
+                title="Зона роста: конверсия",
+                content="Есть потенциал для улучшения конверсии на этапе 'КП отправлено'. Рекомендуем более активный follow-up через 2-3 дня после отправки.",
+            ))
+
+
+async def seed_demo_for_tenant(db: AsyncSession, tenant_id: uuid.UUID) -> None:
+    """Засеивает демо-данные (команда + менеджеры) для нового тенанта."""
+    from sqlalchemy import select as sa_select
+    existing = await db.execute(sa_select(Manager).where(Manager.tenant_id == tenant_id).limit(1))
+    if existing.scalar_one_or_none():
+        return  # уже есть данные
+
+    team = Team(
+        tenant_id=tenant_id,
+        name="Отдел продаж",
+        monthly_plan=2000000,
+    )
+    db.add(team)
+    await db.flush()
+
+    await _seed_managers_for_tenant(db, tenant_id, team.id)
+    await db.commit()
+
+
 async def seed():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     async with AsyncSessionLocal() as db:
-        # Проверяем, не загружены ли уже демо-данные
         from sqlalchemy import select
         existing = await db.execute(select(Tenant).where(Tenant.slug == "demo"))
         if existing.scalar_one_or_none():
@@ -69,74 +156,7 @@ async def seed():
         db.add(team)
         await db.flush()
 
-        # Менеджеры + метрики + рекомендации
-        rng = random.Random(42)
-        for idx, m_data in enumerate(DEMO_MANAGERS):
-            mgr_id = uuid.UUID(f"00000000-0000-0000-0001-{str(idx+1).zfill(12)}")
-            mgr = Manager(
-                id=mgr_id,
-                tenant_id=tenant.id,
-                team_id=team.id,
-                full_name=m_data["name"],
-                email=m_data["email"],
-                monthly_plan=m_data["plan"],
-                crm_id=f"crm_{idx+1}",
-            )
-            db.add(mgr)
-            await db.flush()
-
-            perf = m_data["perf"]
-            calls = int(rng.uniform(20, 60) * perf)
-            deals_created = rng.randint(10, 20)
-            deals_won = int(deals_created * rng.uniform(0.2, 0.5) * perf)
-            revenue = deals_won * rng.uniform(50000, 150000) * perf
-
-            # Недельная история (4 недели)
-            for week in range(4):
-                period_start = datetime.utcnow() - timedelta(weeks=4 - week)
-                snap = MetricSnapshot(
-                    tenant_id=tenant.id,
-                    manager_id=mgr_id,
-                    period_type="weekly",
-                    period_start=period_start,
-                    calls_count=int(calls * rng.uniform(0.8, 1.2)),
-                    calls_duration_avg=rng.uniform(120, 600),
-                    calls_quality_avg=round(rng.uniform(5.0, 9.0) * perf, 1),
-                    deals_created=int(deals_created * rng.uniform(0.7, 1.3) / 4),
-                    deals_won=int(deals_won * rng.uniform(0.5, 1.5) / 4),
-                    deals_lost=rng.randint(0, 3),
-                    conversion_rate=round(rng.uniform(15, 45) * perf, 1),
-                    avg_deal_size=round(rng.uniform(40000, 150000), -3),
-                    revenue=round(revenue / 4 * rng.uniform(0.7, 1.3), -3),
-                    crm_fill_rate=round(rng.uniform(55, 95) * min(perf, 1), 1),
-                    overdue_tasks=max(0, int(rng.uniform(0, 8) * (1 - perf + 0.5))),
-                    activities_count=calls + rng.randint(5, 20),
-                    plan_completion_forecast=round(perf * 100 * rng.uniform(0.9, 1.1), 1),
-                )
-                db.add(snap)
-
-            # Рекомендации
-            if perf >= 1.0:
-                db.add(Recommendation(
-                    tenant_id=tenant.id, manager_id=mgr_id,
-                    rec_type="strength", priority=1,
-                    title="Перевыполнение плана",
-                    content=f"{m_data['name']} стабильно перевыполняет план. Рекомендуем рассмотреть наставничество над менее опытными коллегами.",
-                ))
-            elif perf < 0.75:
-                db.add(Recommendation(
-                    tenant_id=tenant.id, manager_id=mgr_id,
-                    rec_type="alert", priority=3,
-                    title="Риск невыполнения плана",
-                    content=f"Прогноз выполнения плана: {int(perf*100)}%. Необходимо срочно увеличить количество контактов и проработать застрявшие сделки.",
-                ))
-            else:
-                db.add(Recommendation(
-                    tenant_id=tenant.id, manager_id=mgr_id,
-                    rec_type="growth", priority=2,
-                    title="Зона роста: конверсия",
-                    content="Есть потенциал для улучшения конверсии на этапе 'КП отправлено'. Рекомендуем более активный follow-up через 2-3 дня после отправки.",
-                ))
+        await _seed_managers_for_tenant(db, tenant.id, team.id)
 
         await db.commit()
         print("✅ Демо-данные успешно загружены!")
