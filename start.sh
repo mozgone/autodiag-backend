@@ -6,6 +6,15 @@ echo "============================================"
 echo "  Sellex — запуск приложения"
 echo "============================================"
 
+# Проверка наличия DATABASE_URL
+if [ -z "${DATABASE_URL}" ]; then
+  echo "❌ ОШИБКА: переменная DATABASE_URL не установлена!"
+  echo "   Перейдите в Render Dashboard → Web Service → Environment"
+  echo "   и добавьте DATABASE_URL с Internal URL вашей PostgreSQL базы."
+  exit 1
+fi
+echo "✅ DATABASE_URL найден (host: $(echo $DATABASE_URL | sed 's|.*@||' | cut -d'/' -f1))"
+
 # Полный сброс БД только при RESET_DB=1 (экстренное исправление)
 if [ "${RESET_DB:-0}" = "1" ]; then
   echo "⚠️  RESET_DB=1 — полная очистка БД..."
