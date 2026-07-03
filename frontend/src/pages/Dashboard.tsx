@@ -21,7 +21,7 @@ const fmt = (n: number) =>
 export default function Dashboard() {
   const [period, setPeriod] = useState<Period>('week');
 
-  const { data: overview, isLoading: ovLoading } = useQuery({
+  const { data: overview, isLoading: ovLoading, isError: ovError, refetch } = useQuery({
     queryKey: ['overview', period],
     queryFn: () => getOverview(period),
   });
@@ -36,7 +36,29 @@ export default function Dashboard() {
 
   if (ovLoading) return (
     <div style={{ textAlign: 'center', padding: 60, color: '#64748b' }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
       Загрузка дашборда...
+      <div style={{ fontSize: 12, marginTop: 8, color: '#475569' }}>Соединение с сервером...</div>
+    </div>
+  );
+
+  if (ovError) return (
+    <div style={{ textAlign: 'center', padding: 60 }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+      <div style={{ color: '#f472b6', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Не удалось загрузить данные</div>
+      <div style={{ color: '#64748b', fontSize: 13, marginBottom: 20 }}>
+        Сервер не отвечает. Возможно, он запускается — подождите 30 секунд и попробуйте снова.
+      </div>
+      <button
+        onClick={() => refetch()}
+        style={{
+          padding: '10px 24px', background: 'linear-gradient(135deg, #2dd4bf, #a78bfa)',
+          color: '#fff', border: 'none', borderRadius: 10, fontSize: 14,
+          fontWeight: 600, cursor: 'pointer',
+        }}
+      >
+        Повторить
+      </button>
     </div>
   );
 

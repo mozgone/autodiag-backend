@@ -25,13 +25,20 @@ function PlanBar({ value }: { value: number }) {
 export default function Managers() {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
-  const { data: managers = [], isLoading } = useQuery({ queryKey: ['managers', 'week'], queryFn: () => getManagers('week') });
+  const { data: managers = [], isLoading, isError, refetch } = useQuery({ queryKey: ['managers', 'week'], queryFn: () => getManagers('week') });
 
   const filtered = managers.filter((m: Manager) =>
     m.full_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (isLoading) return <div style={{ textAlign: 'center', padding: 60, color: '#64748b' }}>Загрузка...</div>;
+  if (isLoading) return <div style={{ textAlign: 'center', padding: 60, color: '#64748b' }}>Загрузка менеджеров...</div>;
+  if (isError) return (
+    <div style={{ textAlign: 'center', padding: 60 }}>
+      <div style={{ color: '#f472b6', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Не удалось загрузить данные</div>
+      <div style={{ color: '#64748b', fontSize: 13, marginBottom: 20 }}>Сервер не отвечает. Подождите 30 секунд и попробуйте снова.</div>
+      <button onClick={() => refetch()} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #2dd4bf, #a78bfa)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Повторить</button>
+    </div>
+  );
 
   return (
     <div>
