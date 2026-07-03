@@ -12,7 +12,7 @@ if [ "${RESET_DB:-0}" = "1" ]; then
   python -c "
 import sys, os
 sys.path.insert(0, '.')
-db_url = os.environ.get('DATABASE_URL', '').replace('postgresql+asyncpg://', 'postgresql://')
+db_url = os.environ.get('DATABASE_URL', '').replace('postgresql+asyncpg://', 'postgresql://').replace('postgres://', 'postgresql://')
 import psycopg2
 conn = psycopg2.connect(db_url, connect_timeout=15)
 conn.autocommit = True
@@ -41,7 +41,7 @@ async def migrate():
     # Добавляем новые колонки, если их нет (безопасно для production)
     import psycopg2
     import os
-    db_url = os.environ.get('DATABASE_URL', '').replace('postgresql+asyncpg://', 'postgresql://')
+    db_url = os.environ.get('DATABASE_URL', '').replace('postgresql+asyncpg://', 'postgresql://').replace('postgres://', 'postgresql://')
     pg = psycopg2.connect(db_url, connect_timeout=15)
     pg.autocommit = True
     cur = pg.cursor()
