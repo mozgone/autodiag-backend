@@ -176,7 +176,7 @@ async def get_manager_calls(
     calls_res = await db.execute(
         select(CallAnalysis)
         .where(CallAnalysis.manager_id == m.id)
-        .order_by(CallAnalysis.item_date.desc().nullslast(), CallAnalysis.created_at.desc())
+        .order_by(CallAnalysis.item_date.desc().nulls_last(), CallAnalysis.created_at.desc())
         .limit(limit)
     )
     calls = calls_res.scalars().all()
